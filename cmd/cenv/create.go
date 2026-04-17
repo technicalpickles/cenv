@@ -96,7 +96,7 @@ var createCmd = &cobra.Command{
 					settingsData = bootstrap.ExtractAuth(loaded)
 				}
 				if hasOAuth(home) {
-					logf("[cenv] Warning: Anthropic OAuth detected in %s; login tokens won't transfer to the new env. You'll need to run 'claude /login' on first use. (see gt-wl86)\n", filepath.Join(home, ".claude.json"))
+					logf("[cenv] Note: Anthropic OAuth detected. Login tokens don't transfer between envs; run 'cenv login %s' to authenticate this env.\n", name)
 				}
 			}
 			if settingsData == nil {
