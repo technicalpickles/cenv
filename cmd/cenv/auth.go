@@ -33,6 +33,9 @@ var authCreateCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("detecting auth: %w", err)
 		}
+		if detected.Type == "anthropic" {
+			return fmt.Errorf("OAuth users don't need auth envs; each env requires its own 'cenv login <name>'. Try 'cenv create <name>' then 'cenv login <name>' instead")
+		}
 		logf("[cenv] Detected auth type: %s\n", detected.Type)
 
 		userSettingsPath := filepath.Join(claudeDir, "settings.json")
