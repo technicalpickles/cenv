@@ -127,6 +127,8 @@ func init() {
 
 // hasOAuth reports whether the user has Anthropic OAuth configured, indicated
 // by a non-empty oauthAccount field in ~/.claude.json (home root, not ~/.claude/).
+// Claude Code writes oauthAccount as an object; older versions may have used a
+// string. Both shapes are accepted.
 func hasOAuth(home string) bool {
 	data, err := os.ReadFile(filepath.Join(home, ".claude.json"))
 	if err != nil {
@@ -136,6 +138,12 @@ func hasOAuth(home string) bool {
 	if err := json.Unmarshal(data, &parsed); err != nil {
 		return false
 	}
-	account, _ := parsed["oauthAccount"].(string)
-	return account != ""
+	switch v := parsed["oauthAccount"].(type) {
+	case string:
+		return v != ""
+	case map[string]any:
+		return len(v) > 0
+	default:
+		return false
+	}
 }
