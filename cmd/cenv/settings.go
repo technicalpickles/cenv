@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -100,7 +99,7 @@ var settingsMergeCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(os.Stderr, "[cenv] Merged settings into %q\n", name)
+		logf("[cenv] Merged settings into %q\n", name)
 		return nil
 	},
 }

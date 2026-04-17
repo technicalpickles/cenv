@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -94,6 +95,9 @@ var createCmd = &cobra.Command{
 				if loaded, err := settings.Load(userSettingsPath); err == nil {
 					settingsData = bootstrap.ExtractAuth(loaded)
 				}
+				if hasOAuth(home) {
+					logf("[cenv] Warning: Anthropic OAuth detected in %s; login tokens won't transfer to the new env. You'll need to run 'claude /login' on first use. (see gt-wl86)\n", filepath.Join(home, ".claude.json"))
+				}
 			}
 			if settingsData == nil {
 				settingsData = map[string]any{}
@@ -109,7 +113,7 @@ var createCmd = &cobra.Command{
 		}
 
 		cleanupNeeded = false
-		fmt.Fprintf(os.Stderr, "[cenv] Created environment %q\n", name)
+		logf("[cenv] Created environment %q\n", name)
 		return nil
 	},
 }
@@ -119,4 +123,19 @@ func init() {
 	createCmd.Flags().StringVar(&createAuth, "auth", "", "Use auth from named auth environment")
 	createCmd.Flags().StringVar(&createFrom, "from", "", "Clone settings from 'user' or another environment")
 	rootCmd.AddCommand(createCmd)
+}
+
+// hasOAuth reports whether the user has Anthropic OAuth configured, indicated
+// by a non-empty oauthAccount field in ~/.claude.json (home root, not ~/.claude/).
+func hasOAuth(home string) bool {
+	data, err := os.ReadFile(filepath.Join(home, ".claude.json"))
+	if err != nil {
+		return false
+	}
+	var parsed map[string]any
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		return false
+	}
+	account, _ := parsed["oauthAccount"].(string)
+	return account != ""
 }

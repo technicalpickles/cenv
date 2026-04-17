@@ -33,7 +33,7 @@ var authCreateCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("detecting auth: %w", err)
 		}
-		fmt.Fprintf(os.Stderr, "[cenv] Detected auth type: %s\n", detected.Type)
+		logf("[cenv] Detected auth type: %s\n", detected.Type)
 
 		userSettingsPath := filepath.Join(claudeDir, "settings.json")
 		loaded, err := settings.Load(userSettingsPath)

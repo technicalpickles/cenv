@@ -2,9 +2,13 @@ package env
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
+
+	"github.com/technicalpickles/cenv/internal/auth"
 )
 
 var validNameRe = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-_]*$`)
@@ -69,6 +73,62 @@ func Remove(name string) error {
 		return fmt.Errorf("env %q not found", name)
 	}
 	return os.RemoveAll(p)
+}
+
+// Info describes an environment's on-disk metadata.
+type Info struct {
+	Name    string    `json:"name"`
+	Path    string    `json:"path"`
+	HasAuth bool      `json:"has_auth"`
+	Size    int64     `json:"size"`
+	Mtime   time.Time `json:"mtime"`
+}
+
+// Inspect returns metadata for the named environment. Size is the sum of all
+// file sizes under the env directory. Mtime is the most recent modification
+// time of any file in the env, or the directory's own mtime if empty.
+// HasAuth reports whether the env has a detectable auth config.
+func Inspect(name string) (*Info, error) {
+	p := Path(name)
+	stat, err := os.Stat(p)
+	if err != nil {
+		return nil, err
+	}
+	if !stat.IsDir() {
+		return nil, fmt.Errorf("env %q is not a directory", name)
+	}
+
+	var size int64
+	mtime := stat.ModTime()
+	err = filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		fi, err := d.Info()
+		if err != nil {
+			return err
+		}
+		size += fi.Size()
+		if m := fi.ModTime(); m.After(mtime) {
+			mtime = m
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("walking env %q: %w", name, err)
+	}
+
+	_, authErr := auth.Detect(p)
+	return &Info{
+		Name:    name,
+		Path:    p,
+		HasAuth: authErr == nil,
+		Size:    size,
+		Mtime:   mtime,
+	}, nil
 }
 
 // ValidateName checks that name is a valid environment name.

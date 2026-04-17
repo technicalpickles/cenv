@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 	"github.com/technicalpickles/cenv/internal/env"
 )
@@ -17,7 +14,7 @@ var removeCmd = &cobra.Command{
 		if err := env.Remove(name); err != nil {
 			return err
 		}
-		fmt.Fprintf(os.Stderr, "[cenv] Removed environment %q\n", name)
+		logf("[cenv] Removed environment %q\n", name)
 		return nil
 	},
 }

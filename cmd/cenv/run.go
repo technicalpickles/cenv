@@ -37,7 +37,7 @@ var runCmd = &cobra.Command{
 			claudeArgs = args[2:]
 		}
 
-		fmt.Fprintf(os.Stderr, "[cenv] Using %q (%s)\n", name, envDir)
+		logf("[cenv] Using %q (%s)\n", name, envDir)
 
 		claudePath, err := exec.LookPath("claude")
 		if err != nil {

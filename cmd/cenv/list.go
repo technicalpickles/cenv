@@ -1,11 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/cobra"
 	"github.com/technicalpickles/cenv/internal/env"
 )
+
+var listJSON bool
 
 var listCmd = &cobra.Command{
 	Use:   "list",
@@ -15,6 +18,23 @@ var listCmd = &cobra.Command{
 		names, err := env.List()
 		if err != nil {
 			return err
+		}
+
+		if listJSON {
+			infos := make([]*env.Info, 0, len(names))
+			for _, name := range names {
+				info, err := env.Inspect(name)
+				if err != nil {
+					return fmt.Errorf("inspecting %q: %w", name, err)
+				}
+				infos = append(infos, info)
+			}
+			out, err := json.MarshalIndent(infos, "", "  ")
+			if err != nil {
+				return fmt.Errorf("marshaling JSON: %w", err)
+			}
+			fmt.Println(string(out))
+			return nil
 		}
 
 		if len(names) == 0 {
@@ -31,5 +51,6 @@ var listCmd = &cobra.Command{
 }
 
 func init() {
+	listCmd.Flags().BoolVar(&listJSON, "json", false, "Emit environments as JSON with metadata")
 	rootCmd.AddCommand(listCmd)
 }

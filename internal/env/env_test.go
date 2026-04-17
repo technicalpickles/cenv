@@ -135,6 +135,67 @@ func TestRemove(t *testing.T) {
 	})
 }
 
+func TestInspect(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("CENV_BASE", tmp)
+
+	t.Run("errors on missing env", func(t *testing.T) {
+		if _, err := env.Inspect("nope"); err == nil {
+			t.Error("Inspect(missing) expected error, got nil")
+		}
+	})
+
+	t.Run("returns metadata for env", func(t *testing.T) {
+		envDir := filepath.Join(tmp, "myenv")
+		if err := os.Mkdir(envDir, 0755); err != nil {
+			t.Fatal(err)
+		}
+		// settings.json with awsAuthRefresh → has_auth should be true
+		settings := `{"awsAuthRefresh": {"region": "us-west-2"}}`
+		if err := os.WriteFile(filepath.Join(envDir, "settings.json"), []byte(settings), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		info, err := env.Inspect("myenv")
+		if err != nil {
+			t.Fatalf("Inspect: %v", err)
+		}
+		if info.Name != "myenv" {
+			t.Errorf("Name = %q, want %q", info.Name, "myenv")
+		}
+		if info.Path != envDir {
+			t.Errorf("Path = %q, want %q", info.Path, envDir)
+		}
+		if !info.HasAuth {
+			t.Error("HasAuth = false, want true (awsAuthRefresh present)")
+		}
+		if info.Size != int64(len(settings)) {
+			t.Errorf("Size = %d, want %d", info.Size, len(settings))
+		}
+		if info.Mtime.IsZero() {
+			t.Error("Mtime is zero")
+		}
+	})
+
+	t.Run("has_auth false for bare env", func(t *testing.T) {
+		envDir := filepath.Join(tmp, "bare")
+		if err := os.Mkdir(envDir, 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(envDir, "settings.json"), []byte(`{}`), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		info, err := env.Inspect("bare")
+		if err != nil {
+			t.Fatalf("Inspect: %v", err)
+		}
+		if info.HasAuth {
+			t.Error("HasAuth = true, want false (empty settings, no oauthAccount)")
+		}
+	})
+}
+
 func TestValidateName(t *testing.T) {
 	valid := []string{
 		"myenv",
