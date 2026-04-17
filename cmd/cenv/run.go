@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"github.com/technicalpickles/cenv/internal/auth"
 	"github.com/technicalpickles/cenv/internal/env"
 	"github.com/technicalpickles/cenv/internal/settings"
 )
@@ -27,6 +28,10 @@ var runCmd = &cobra.Command{
 		settingsPath := filepath.Join(envDir, "settings.json")
 		if _, err := settings.Load(settingsPath); err != nil {
 			return fmt.Errorf("preflight failed: %w", err)
+		}
+
+		if _, err := auth.Detect(envDir); err != nil {
+			return fmt.Errorf("env %q has no auth configured; run 'cenv login %s' first", name, name)
 		}
 
 		var claudeArgs []string
