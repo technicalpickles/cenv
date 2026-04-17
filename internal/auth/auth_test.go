@@ -167,6 +167,22 @@ func TestDetect_Anthropic_ObjectShape_NoEmail(t *testing.T) {
 	if result.Type != "anthropic" {
 		t.Errorf("Type = %q, want %q", result.Type, "anthropic")
 	}
+	if result.Detail != "" {
+		t.Errorf("Detail = %q, want empty string when emailAddress absent", result.Detail)
+	}
+}
+
+func TestDetect_Anthropic_NullOAuthAccount(t *testing.T) {
+	dir := t.TempDir()
+	writeJSON(t, dir, "settings.json", `{}`)
+	writeJSON(t, dir, ".claude.json", `{
+		"oauthAccount": null
+	}`)
+
+	_, err := auth.Detect(dir)
+	if err == nil {
+		t.Error("expected error for null oauthAccount, got nil")
+	}
 }
 
 func TestDetect_Anthropic_ObjectShape_EmptyObject(t *testing.T) {
