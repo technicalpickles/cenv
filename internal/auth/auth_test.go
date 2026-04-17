@@ -124,6 +124,64 @@ func TestDetect_EmptyOAuthAccount(t *testing.T) {
 	}
 }
 
+func TestDetect_Anthropic_ObjectShape(t *testing.T) {
+	dir := t.TempDir()
+	writeJSON(t, dir, "settings.json", `{}`)
+	writeJSON(t, dir, ".claude.json", `{
+		"oauthAccount": {
+			"accountUuid": "abc-123",
+			"emailAddress": "user@example.com",
+			"organizationUuid": "org-456"
+		}
+	}`)
+
+	result, err := auth.Detect(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Type != "anthropic" {
+		t.Errorf("Type = %q, want %q", result.Type, "anthropic")
+	}
+	if result.EnvName != "auth-anthropic" {
+		t.Errorf("EnvName = %q, want %q", result.EnvName, "auth-anthropic")
+	}
+	want := "user@example.com"
+	if result.Detail != want {
+		t.Errorf("Detail = %q, want %q", result.Detail, want)
+	}
+}
+
+func TestDetect_Anthropic_ObjectShape_NoEmail(t *testing.T) {
+	dir := t.TempDir()
+	writeJSON(t, dir, "settings.json", `{}`)
+	writeJSON(t, dir, ".claude.json", `{
+		"oauthAccount": {
+			"accountUuid": "abc-123"
+		}
+	}`)
+
+	result, err := auth.Detect(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Type != "anthropic" {
+		t.Errorf("Type = %q, want %q", result.Type, "anthropic")
+	}
+}
+
+func TestDetect_Anthropic_ObjectShape_EmptyObject(t *testing.T) {
+	dir := t.TempDir()
+	writeJSON(t, dir, "settings.json", `{}`)
+	writeJSON(t, dir, ".claude.json", `{
+		"oauthAccount": {}
+	}`)
+
+	_, err := auth.Detect(dir)
+	if err == nil {
+		t.Error("expected error for empty oauthAccount object, got nil")
+	}
+}
+
 // contains is a helper for substring checks.
 func contains(s, sub string) bool {
 	return len(s) >= len(sub) && (s == sub || len(sub) == 0 ||

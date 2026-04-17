@@ -18,7 +18,10 @@ type DetectResult struct {
 //
 // Detection order:
 //  1. settings.json: if "awsAuthRefresh" key exists as an object, it's AWS Bedrock.
-//  2. .claude.json: if "oauthAccount" key exists as a non-empty string, it's Anthropic.
+//  2. .claude.json: if "oauthAccount" key exists as a non-empty string OR
+//     a non-empty object, it's Anthropic. The object shape is what Claude
+//     Code writes today (fields: accountUuid, emailAddress, organizationUuid,
+//     hasExtraUsageEnabled, billingType).
 //
 // Returns an error if neither is found.
 func Detect(configDir string) (*DetectResult, error) {
@@ -48,12 +51,26 @@ func Detect(configDir string) (*DetectResult, error) {
 	claudeData, err := readJSON(claudePath)
 	if err == nil {
 		if val, ok := claudeData["oauthAccount"]; ok {
-			if email, ok := val.(string); ok && email != "" {
-				return &DetectResult{
-					Type:    "anthropic",
-					EnvName: "auth-anthropic",
-					Detail:  email,
-				}, nil
+			switch v := val.(type) {
+			case string:
+				if v != "" {
+					return &DetectResult{
+						Type:    "anthropic",
+						EnvName: "auth-anthropic",
+						Detail:  v,
+					}, nil
+				}
+			case map[string]any:
+				email, _ := v["emailAddress"].(string)
+				// Real OAuth objects always have at least one populated field.
+				// Treat an empty object as "no auth".
+				if len(v) > 0 {
+					return &DetectResult{
+						Type:    "anthropic",
+						EnvName: "auth-anthropic",
+						Detail:  email,
+					}, nil
+				}
 			}
 		}
 	}
