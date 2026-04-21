@@ -73,7 +73,7 @@ func TestCopyAuth_SourceNotAuthed_NoOp(t *testing.T) {
 	// src has no .claude.json and no keychain entry
 
 	kc := &keychain.Client{Runner: &fakeKeychain{}}
-	copied, err := copyAuth(srcDir, dstDir, kc)
+	copied, err := copyAuth(srcDir, filepath.Join(srcDir, ".claude.json"), dstDir, kc)
 	if err != nil {
 		t.Fatalf("copyAuth err: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestCopyAuth_HappyPath(t *testing.T) {
 	})
 
 	kc := &keychain.Client{Runner: fk}
-	copied, err := copyAuth(srcDir, dstDir, kc)
+	copied, err := copyAuth(srcDir, filepath.Join(srcDir, ".claude.json"), dstDir, kc)
 	if err != nil {
 		t.Fatalf("copyAuth err: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestCopyAuth_HasOAuthButNoKeychain_Skips(t *testing.T) {
 	})
 
 	kc := &keychain.Client{Runner: &fakeKeychain{entries: map[string]string{}}}
-	copied, err := copyAuth(srcDir, dstDir, kc)
+	copied, err := copyAuth(srcDir, filepath.Join(srcDir, ".claude.json"), dstDir, kc)
 	if err != nil {
 		t.Fatalf("copyAuth err: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestCopyAuth_MergeFailure_RollsBackKeychain(t *testing.T) {
 	// read. This triggers the rollback path.
 
 	kc := &keychain.Client{Runner: fk}
-	copied, err := copyAuth(srcDir, dstDir, kc)
+	copied, err := copyAuth(srcDir, filepath.Join(srcDir, ".claude.json"), dstDir, kc)
 	if err == nil {
 		t.Fatal("copyAuth returned nil err, want error (no dst .claude.json)")
 	}
@@ -186,6 +186,49 @@ func TestCopyAuth_MergeFailure_RollsBackKeychain(t *testing.T) {
 	dstSvc := keychain.ServiceName(dstDir)
 	if _, present := fk.entries[dstSvc]; present {
 		t.Errorf("keychain entry for dst still present after rollback: %v", fk.entries)
+	}
+}
+
+func TestCopyAuth_UserStyleClaudeJSONLocation(t *testing.T) {
+	// User case: srcConfigDir is like ~/.claude but srcClaudeJSON is at
+	// HOME root (~/.claude.json), not inside the config dir. Regression
+	// test for the asymmetry fix.
+	homeLike := t.TempDir()
+	srcConfigDir := filepath.Join(homeLike, ".claude")
+	srcClaudeJSON := filepath.Join(homeLike, ".claude.json") // at home root
+	if err := os.MkdirAll(srcConfigDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	writeJSON(t, srcClaudeJSON, map[string]any{
+		"oauthAccount": map[string]any{"emailAddress": "user@example.com"},
+	})
+
+	srcSvc := keychain.ServiceName(srcConfigDir)
+	fk := &fakeKeychain{entries: map[string]string{srcSvc: "token-xyz"}}
+
+	dstDir := t.TempDir()
+	writeJSON(t, filepath.Join(dstDir, ".claude.json"), map[string]any{
+		"hasCompletedOnboarding": true,
+	})
+
+	kc := &keychain.Client{Runner: fk}
+	copied, err := copyAuth(srcConfigDir, srcClaudeJSON, dstDir, kc)
+	if err != nil {
+		t.Fatalf("copyAuth err: %v", err)
+	}
+	if !copied {
+		t.Error("copied = false, want true when user-style oauth is present")
+	}
+
+	dstSvc := keychain.ServiceName(dstDir)
+	if fk.entries[dstSvc] != "token-xyz" {
+		t.Errorf("dst keychain = %q, want token-xyz", fk.entries[dstSvc])
+	}
+
+	got := readJSON(t, filepath.Join(dstDir, ".claude.json"))
+	acct, _ := got["oauthAccount"].(map[string]any)
+	if acct["emailAddress"] != "user@example.com" {
+		t.Error("dst oauthAccount not merged from user-style claude.json")
 	}
 }
 

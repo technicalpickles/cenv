@@ -51,7 +51,8 @@ var createCmd = &cobra.Command{
 		}()
 
 		var settingsData map[string]any
-		var sourceDir string // empty = no auth copy (bare or legacy auth-env)
+		var sourceDir string        // empty = no auth copy (bare or legacy auth-env)
+		var sourceClaudeJSON string // path to source's .claude.json (asymmetric, see copyAuth doc)
 
 		switch {
 		case createBare:
@@ -82,6 +83,7 @@ var createCmd = &cobra.Command{
 			}
 			settingsData = loaded
 			sourceDir = userClaudeDir
+			sourceClaudeJSON = filepath.Join(home, ".claude.json")
 
 		case createFrom != "":
 			if !env.Exists(createFrom) {
@@ -94,6 +96,7 @@ var createCmd = &cobra.Command{
 			}
 			settingsData = loaded
 			sourceDir = srcEnvDir
+			sourceClaudeJSON = filepath.Join(srcEnvDir, ".claude.json")
 
 		default:
 			// Auto-detect from ~/.claude.
@@ -104,6 +107,7 @@ var createCmd = &cobra.Command{
 					settingsData = bootstrap.ExtractAuth(loaded)
 				}
 				sourceDir = userClaudeDir
+				sourceClaudeJSON = filepath.Join(home, ".claude.json")
 			}
 			if settingsData == nil {
 				settingsData = map[string]any{}
@@ -119,7 +123,7 @@ var createCmd = &cobra.Command{
 		}
 
 		if sourceDir != "" {
-			copied, err := copyAuth(sourceDir, envDir, keychain.Default)
+			copied, err := copyAuth(sourceDir, sourceClaudeJSON, envDir, keychain.Default)
 			if err != nil {
 				return fmt.Errorf("copying auth: %w", err)
 			}
@@ -142,17 +146,26 @@ func init() {
 }
 
 // copyAuth moves OAuth auth (keychain token + oauthAccount + firstTokenDate)
-// from srcDir to dstEnvDir. Returns copied=true iff something was written.
+// from source to dstEnvDir. Returns copied=true iff something was written.
 //
-// srcDir is a claude config dir: either ~/.claude (user) or a cenv env dir.
-// dstEnvDir is the new cenv env dir; it must already have .claude.json from
-// bootstrap.WriteOnboarding.
+// srcConfigDir is the source's claude config dir: either ~/.claude (user) or
+// a cenv env dir. It's used to derive the keychain service name.
+//
+// srcClaudeJSON is the source's .claude.json path. Note the asymmetry:
+//   - For ~/.claude, this is ~/.claude.json (at HOME root, not inside the dir).
+//   - For cenv env dirs, this is <envdir>/.claude.json (inside the dir).
+//
+// Claude Code writes .claude.json outside the config dir for the default
+// (~/.claude) case but inside it when CLAUDE_CONFIG_DIR is set.
+//
+// dstEnvDir is the new cenv env dir. Its .claude.json is at dstEnvDir/.claude.json
+// (cenv sets CLAUDE_CONFIG_DIR for its envs so Claude Code writes there).
 //
 // Source missing either the keychain token OR oauthAccount means the source
 // isn't fully OAuth-authed; returns copied=false, nil. This is the common
 // case for Bedrock-only or fresh users.
-func copyAuth(srcDir, dstEnvDir string, kc *keychain.Client) (copied bool, err error) {
-	srcOAuth, err := claudeconfig.ReadOAuth(filepath.Join(srcDir, ".claude.json"))
+func copyAuth(srcConfigDir, srcClaudeJSON, dstEnvDir string, kc *keychain.Client) (copied bool, err error) {
+	srcOAuth, err := claudeconfig.ReadOAuth(srcClaudeJSON)
 	if err != nil {
 		return false, fmt.Errorf("reading source OAuth config: %w", err)
 	}
@@ -160,7 +173,7 @@ func copyAuth(srcDir, dstEnvDir string, kc *keychain.Client) (copied bool, err e
 		return false, nil
 	}
 
-	srcSvc := keychain.ServiceName(srcDir)
+	srcSvc := keychain.ServiceName(srcConfigDir)
 	token, notFound, err := kc.Read(srcSvc)
 	if err != nil {
 		return false, fmt.Errorf("reading source keychain: %w", err)
