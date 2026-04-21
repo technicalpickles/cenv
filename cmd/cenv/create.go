@@ -152,20 +152,21 @@ func copyAuth(srcDir, dstEnvDir string, kc *keychain.Client) (copied bool, err e
 		return false, fmt.Errorf("reading source keychain: %w", err)
 	}
 	if notFound {
-		// Partial state — .claude.json claims auth, keychain is empty.
+		// Partial state: .claude.json claims auth but keychain is empty.
 		// Skip rather than write a half-copied state.
 		return false, nil
 	}
 
-	// Destination writes — keychain first; cleanup on subsequent failure
-	// is the caller's job (via the existing defer in createCmd).
+	// Destination writes: keychain first, then config. Cleanup on subsequent
+	// failure is the caller's job (via the existing defer in createCmd).
 	dstSvc := keychain.ServiceName(dstEnvDir)
 	if err := kc.Write(dstSvc, token); err != nil {
 		return false, fmt.Errorf("writing destination keychain: %w", err)
 	}
 	if err := claudeconfig.MergeOAuth(filepath.Join(dstEnvDir, ".claude.json"), srcOAuth); err != nil {
-		// Roll back the keychain write we just did.
-		_ = kc.Delete(dstSvc)
+		if delErr := kc.Delete(dstSvc); delErr != nil {
+			logf("[cenv] Warning: failed to roll back keychain entry %q: %v\n", dstSvc, delErr)
+		}
 		return false, fmt.Errorf("merging OAuth into destination config: %w", err)
 	}
 	return true, nil

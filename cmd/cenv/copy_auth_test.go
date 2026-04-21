@@ -159,6 +159,36 @@ func TestCopyAuth_HasOAuthButNoKeychain_Skips(t *testing.T) {
 	}
 }
 
+func TestCopyAuth_MergeFailure_RollsBackKeychain(t *testing.T) {
+	// If MergeOAuth fails after the keychain write succeeded, the keychain
+	// entry must be rolled back so cenv's has_auth check doesn't report
+	// true for an env whose .claude.json lacks oauthAccount.
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	writeJSON(t, filepath.Join(srcDir, ".claude.json"), map[string]any{
+		"oauthAccount": map[string]any{"emailAddress": "user@example.com"},
+	})
+	srcSvc := keychain.ServiceName(srcDir)
+	fk := &fakeKeychain{entries: map[string]string{srcSvc: "token-abc"}}
+
+	// Destination has NO .claude.json at all, so MergeOAuth will error on
+	// read. This triggers the rollback path.
+
+	kc := &keychain.Client{Runner: fk}
+	copied, err := copyAuth(srcDir, dstDir, kc)
+	if err == nil {
+		t.Fatal("copyAuth returned nil err, want error (no dst .claude.json)")
+	}
+	if copied {
+		t.Error("copied = true, want false on merge failure")
+	}
+	dstSvc := keychain.ServiceName(dstDir)
+	if _, present := fk.entries[dstSvc]; present {
+		t.Errorf("keychain entry for dst still present after rollback: %v", fk.entries)
+	}
+}
+
 // --- helpers ---------------------------------------------------------------
 
 func writeJSON(t *testing.T, path string, v any) {
