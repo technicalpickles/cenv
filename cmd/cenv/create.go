@@ -8,7 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/technicalpickles/cenv/internal/bootstrap"
+	"github.com/technicalpickles/cenv/internal/claudeconfig"
 	"github.com/technicalpickles/cenv/internal/env"
+	"github.com/technicalpickles/cenv/internal/keychain"
 	"github.com/technicalpickles/cenv/internal/settings"
 )
 
@@ -123,6 +125,50 @@ func init() {
 	createCmd.Flags().StringVar(&createAuth, "auth", "", "Use auth from named auth environment")
 	createCmd.Flags().StringVar(&createFrom, "from", "", "Clone settings from 'user' or another environment")
 	rootCmd.AddCommand(createCmd)
+}
+
+// copyAuth moves OAuth auth (keychain token + oauthAccount + firstTokenDate)
+// from srcDir to dstEnvDir. Returns copied=true iff something was written.
+//
+// srcDir is a claude config dir: either ~/.claude (user) or a cenv env dir.
+// dstEnvDir is the new cenv env dir; it must already have .claude.json from
+// bootstrap.WriteOnboarding.
+//
+// Source missing either the keychain token OR oauthAccount means the source
+// isn't fully OAuth-authed; returns copied=false, nil. This is the common
+// case for Bedrock-only or fresh users.
+func copyAuth(srcDir, dstEnvDir string, kc *keychain.Client) (copied bool, err error) {
+	srcOAuth, err := claudeconfig.ReadOAuth(filepath.Join(srcDir, ".claude.json"))
+	if err != nil {
+		return false, fmt.Errorf("reading source OAuth config: %w", err)
+	}
+	if srcOAuth == nil {
+		return false, nil
+	}
+
+	srcSvc := keychain.ServiceName(srcDir)
+	token, notFound, err := kc.Read(srcSvc)
+	if err != nil {
+		return false, fmt.Errorf("reading source keychain: %w", err)
+	}
+	if notFound {
+		// Partial state — .claude.json claims auth, keychain is empty.
+		// Skip rather than write a half-copied state.
+		return false, nil
+	}
+
+	// Destination writes — keychain first; cleanup on subsequent failure
+	// is the caller's job (via the existing defer in createCmd).
+	dstSvc := keychain.ServiceName(dstEnvDir)
+	if err := kc.Write(dstSvc, token); err != nil {
+		return false, fmt.Errorf("writing destination keychain: %w", err)
+	}
+	if err := claudeconfig.MergeOAuth(filepath.Join(dstEnvDir, ".claude.json"), srcOAuth); err != nil {
+		// Roll back the keychain write we just did.
+		_ = kc.Delete(dstSvc)
+		return false, fmt.Errorf("merging OAuth into destination config: %w", err)
+	}
+	return true, nil
 }
 
 // hasOAuth reports whether the user has Anthropic OAuth configured, indicated
