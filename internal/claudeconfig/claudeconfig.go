@@ -1,7 +1,7 @@
-// Package claudeconfig reads and merges OAuth-related fields in a Claude
-// Code config file (.claude.json). Only oauthAccount and
-// claudeCodeFirstTokenDate are touched; onboarding keys written by cenv's
-// bootstrap are preserved.
+// Package claudeconfig reads and merges specific fields in a Claude Code
+// config file (.claude.json). OAuth fields (oauthAccount,
+// claudeCodeFirstTokenDate) and workspace trust entries under "projects"
+// are touched; onboarding keys and unrelated fields are preserved.
 package claudeconfig
 
 import (
@@ -72,6 +72,56 @@ func MergeOAuth(claudeJSONPath string, oauth *OAuth) error {
 	if oauth.ClaudeCodeFirstDate != "" {
 		parsed["claudeCodeFirstTokenDate"] = oauth.ClaudeCodeFirstDate
 	}
+
+	out, err := json.MarshalIndent(parsed, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshalling %s: %w", claudeJSONPath, err)
+	}
+	out = append(out, '\n')
+	if err := os.WriteFile(claudeJSONPath, out, 0600); err != nil {
+		return fmt.Errorf("writing %s: %w", claudeJSONPath, err)
+	}
+	return nil
+}
+
+// MergeTrust marks workspacePaths as trusted in the Claude config at
+// claudeJSONPath. Each path becomes an entry under "projects" with
+// hasTrustDialogAccepted set to true; existing entries for the same path
+// keep their sibling fields (allowedTools, mcpServers, etc). The file must
+// already exist. Paths are used as-is; callers should resolve to absolute
+// and clean before passing in.
+func MergeTrust(claudeJSONPath string, workspacePaths ...string) error {
+	if len(workspacePaths) == 0 {
+		return nil
+	}
+
+	data, err := os.ReadFile(claudeJSONPath)
+	if err != nil {
+		return fmt.Errorf("reading %s: %w", claudeJSONPath, err)
+	}
+
+	var parsed map[string]any
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		return fmt.Errorf("parsing %s: %w", claudeJSONPath, err)
+	}
+	if parsed == nil {
+		parsed = map[string]any{}
+	}
+
+	projects, _ := parsed["projects"].(map[string]any)
+	if projects == nil {
+		projects = map[string]any{}
+	}
+
+	for _, path := range workspacePaths {
+		entry, _ := projects[path].(map[string]any)
+		if entry == nil {
+			entry = map[string]any{}
+		}
+		entry["hasTrustDialogAccepted"] = true
+		projects[path] = entry
+	}
+	parsed["projects"] = projects
 
 	out, err := json.MarshalIndent(parsed, "", "  ")
 	if err != nil {
