@@ -50,3 +50,36 @@ func ReadOAuth(claudeJSONPath string) (*OAuth, error) {
 	}
 	return oa, nil
 }
+
+// MergeOAuth merges oauth fields into the JSON object at claudeJSONPath,
+// preserving all existing keys (onboarding flags, etc.). The file must
+// already exist -- this is called after bootstrap.WriteOnboarding.
+func MergeOAuth(claudeJSONPath string, oauth *OAuth) error {
+	data, err := os.ReadFile(claudeJSONPath)
+	if err != nil {
+		return fmt.Errorf("reading %s: %w", claudeJSONPath, err)
+	}
+
+	var parsed map[string]any
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		return fmt.Errorf("parsing %s: %w", claudeJSONPath, err)
+	}
+	if parsed == nil {
+		parsed = map[string]any{}
+	}
+
+	parsed["oauthAccount"] = oauth.Account
+	if oauth.ClaudeCodeFirstDate != "" {
+		parsed["claudeCodeFirstTokenDate"] = oauth.ClaudeCodeFirstDate
+	}
+
+	out, err := json.MarshalIndent(parsed, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshalling %s: %w", claudeJSONPath, err)
+	}
+	out = append(out, '\n')
+	if err := os.WriteFile(claudeJSONPath, out, 0600); err != nil {
+		return fmt.Errorf("writing %s: %w", claudeJSONPath, err)
+	}
+	return nil
+}

@@ -1,6 +1,7 @@
 package claudeconfig_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -122,5 +123,84 @@ func TestReadOAuth_NonObjectOAuth(t *testing.T) {
 	}
 	if got != nil {
 		t.Errorf("got %+v, want nil for non-object oauthAccount", got)
+	}
+}
+
+func TestMergeOAuth_PreservesOnboardingKeys(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".claude.json")
+	// This is what bootstrap.WriteOnboarding produces in a fresh env.
+	body := `{"hasCompletedOnboarding": true, "hasSeenTasksHint": true, "theme": "dark", "numStartups": 0}`
+	if err := os.WriteFile(path, []byte(body), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	oauth := &claudeconfig.OAuth{
+		Account:             map[string]any{"emailAddress": "user@example.com"},
+		ClaudeCodeFirstDate: "2026-04-20T12:00:00Z",
+	}
+	if err := claudeconfig.MergeOAuth(path, oauth); err != nil {
+		t.Fatalf("MergeOAuth err: %v", err)
+	}
+
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatal(err)
+	}
+
+	if got["hasCompletedOnboarding"] != true {
+		t.Error("hasCompletedOnboarding dropped")
+	}
+	if got["theme"] != "dark" {
+		t.Error("theme dropped")
+	}
+	if got["claudeCodeFirstTokenDate"] != "2026-04-20T12:00:00Z" {
+		t.Errorf("claudeCodeFirstTokenDate = %v, want 2026-04-20T12:00:00Z", got["claudeCodeFirstTokenDate"])
+	}
+	acct, ok := got["oauthAccount"].(map[string]any)
+	if !ok {
+		t.Fatalf("oauthAccount missing or wrong type: %T", got["oauthAccount"])
+	}
+	if acct["emailAddress"] != "user@example.com" {
+		t.Errorf("oauthAccount.emailAddress = %v, want user@example.com", acct["emailAddress"])
+	}
+}
+
+func TestMergeOAuth_OmitsEmptyFirstDate(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".claude.json")
+	if err := os.WriteFile(path, []byte(`{}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	oauth := &claudeconfig.OAuth{
+		Account: map[string]any{"emailAddress": "user@example.com"},
+		// ClaudeCodeFirstDate is empty; must not be written.
+	}
+	if err := claudeconfig.MergeOAuth(path, oauth); err != nil {
+		t.Fatal(err)
+	}
+
+	raw, _ := os.ReadFile(path)
+	var got map[string]any
+	json.Unmarshal(raw, &got)
+	if _, has := got["claudeCodeFirstTokenDate"]; has {
+		t.Error("claudeCodeFirstTokenDate was written when empty; want omitted")
+	}
+}
+
+func TestMergeOAuth_MissingDestinationFile(t *testing.T) {
+	// MergeOAuth only runs after bootstrap.WriteOnboarding, so .claude.json
+	// is always expected to exist. But if it doesn't, surface the error.
+	path := "/nonexistent/dir/.claude.json"
+	err := claudeconfig.MergeOAuth(path, &claudeconfig.OAuth{
+		Account: map[string]any{"emailAddress": "user@example.com"},
+	})
+	if err == nil {
+		t.Error("MergeOAuth on missing file returned nil err, want error")
 	}
 }
