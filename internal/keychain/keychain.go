@@ -91,8 +91,8 @@ func (c *Client) run(args ...string) ([]byte, error) {
 }
 
 // Read returns the token stored under service. If the entry does not exist,
-// returns notFound=true with a nil error (this is not a failure — the source
-// env simply isn't authed). Any other non-zero exit is surfaced as an error.
+// returns notFound=true with a nil error. That isn't a failure; the source
+// env simply isn't authed. Any other non-zero exit is surfaced as an error.
 func (c *Client) Read(service string) (token string, notFound bool, err error) {
 	acct, err := currentUser()
 	if err != nil {
@@ -128,7 +128,7 @@ func (c *Client) Write(service, token string) error {
 }
 
 // Delete removes the keychain entry for service. Not-found (exit 44) is not
-// an error — the goal is "ensure no entry exists."
+// an error; the goal is "ensure no entry exists."
 func (c *Client) Delete(service string) error {
 	acct, err := currentUser()
 	if err != nil {

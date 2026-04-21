@@ -88,7 +88,7 @@ func TestReadOAuth_EmptyOAuthObject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Empty object is still technically "no oauth" — treat as nil.
+	// Empty object is still technically "no oauth"; treat as nil.
 	if got != nil {
 		t.Errorf("got %+v, want nil for empty oauthAccount", got)
 	}
