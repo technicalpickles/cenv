@@ -92,3 +92,35 @@ func TestReadOAuth_EmptyOAuthObject(t *testing.T) {
 		t.Errorf("got %+v, want nil for empty oauthAccount", got)
 	}
 }
+
+func TestReadOAuth_NullOAuth(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".claude.json")
+	if err := os.WriteFile(path, []byte(`{"oauthAccount": null}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := claudeconfig.ReadOAuth(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != nil {
+		t.Errorf("got %+v, want nil for null oauthAccount", got)
+	}
+}
+
+func TestReadOAuth_NonObjectOAuth(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".claude.json")
+	if err := os.WriteFile(path, []byte(`{"oauthAccount": "garbage"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := claudeconfig.ReadOAuth(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != nil {
+		t.Errorf("got %+v, want nil for non-object oauthAccount", got)
+	}
+}

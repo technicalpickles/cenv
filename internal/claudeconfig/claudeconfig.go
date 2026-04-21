@@ -19,8 +19,8 @@ type OAuth struct {
 }
 
 // ReadOAuth parses claudeJSONPath and returns the OAuth fields, or nil if
-// the file does not exist or lacks oauthAccount. Missing file is not an
-// error (source may never have been authed).
+// the file does not exist or oauthAccount is missing, null, or empty.
+// Missing file is not an error (source may never have been authed).
 func ReadOAuth(claudeJSONPath string) (*OAuth, error) {
 	data, err := os.ReadFile(claudeJSONPath)
 	if err != nil {
