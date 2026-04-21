@@ -15,7 +15,6 @@ import (
 
 var (
 	createBare bool
-	createAuth string
 	createFrom string
 )
 
@@ -51,25 +50,12 @@ var createCmd = &cobra.Command{
 		}()
 
 		var settingsData map[string]any
-		var sourceDir string        // empty = no auth copy (bare or legacy auth-env)
+		var sourceDir string        // empty = no auth copy (bare)
 		var sourceClaudeJSON string // path to source's .claude.json (asymmetric, see copyAuth doc)
 
 		switch {
 		case createBare:
 			settingsData = map[string]any{}
-
-		case createAuth != "":
-			// Legacy auth-<name> env, settings only, no OAuth copy.
-			authEnvName := "auth-" + createAuth
-			if !env.Exists(authEnvName) {
-				return fmt.Errorf("auth environment %q not found", authEnvName)
-			}
-			authSettingsPath := filepath.Join(env.Path(authEnvName), "settings.json")
-			loaded, err := settings.Load(authSettingsPath)
-			if err != nil {
-				return fmt.Errorf("loading auth environment settings: %w", err)
-			}
-			settingsData = loaded
 
 		case createFrom == "user":
 			home, err := os.UserHomeDir()
@@ -140,7 +126,6 @@ var createCmd = &cobra.Command{
 
 func init() {
 	createCmd.Flags().BoolVar(&createBare, "bare", false, "Create with empty settings")
-	createCmd.Flags().StringVar(&createAuth, "auth", "", "Use auth from named auth environment")
 	createCmd.Flags().StringVar(&createFrom, "from", "", "Clone settings from 'user' or another environment")
 	rootCmd.AddCommand(createCmd)
 }
