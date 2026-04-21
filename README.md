@@ -7,7 +7,7 @@ See `projects/cenv/2026-04-15-cenv-design.md` in the pickleton repo for the full
 ## Install
 
 ```
-go install github.com/technicalpickles/cenv@latest
+go install github.com/technicalpickles/cenv/cmd/cenv@latest
 ```
 
 ## Anthropic OAuth users
@@ -48,3 +48,30 @@ Add the env base to your sandbox `allowWrite` list in `.claude/settings.json`:
 ```
 
 If you set `CENV_BASE`, add that path instead.
+
+## Development
+
+Common tasks are defined in `mise.toml`. With [mise](https://mise.jdx.dev/) installed:
+
+```sh
+mise install       # install the Go toolchain pinned in mise.toml
+mise run build     # build ./cenv
+mise run install   # go install ./cmd/cenv
+mise run test      # go test ./...
+mise run check     # fmt + vet + test
+```
+
+Without mise, the raw commands work too:
+
+```sh
+go build -o cenv ./cmd/cenv
+go install ./cmd/cenv
+go test ./...
+```
+
+### Layout
+
+- `cmd/cenv/` — CLI entry point and subcommands
+- `internal/` — supporting packages
+- `docs/plans/` — design docs
+- `scratch/` — throwaway exploration (gitignored where appropriate)

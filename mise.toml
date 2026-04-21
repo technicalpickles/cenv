@@ -1,0 +1,26 @@
+[tools]
+go = "1.26.1"
+
+[tasks.build]
+description = "Build cenv binary to ./cenv"
+run = "go build -o cenv ./cmd/cenv"
+
+[tasks.install]
+description = "Install cenv to $GOBIN (or $GOPATH/bin)"
+run = "go install ./cmd/cenv"
+
+[tasks.test]
+description = "Run tests"
+run = "go test ./..."
+
+[tasks.fmt]
+description = "Format Go code"
+run = "go fmt ./..."
+
+[tasks.vet]
+description = "Run go vet"
+run = "go vet ./..."
+
+[tasks.check]
+description = "Run fmt, vet, and tests"
+depends = ["fmt", "vet", "test"]
