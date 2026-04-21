@@ -39,18 +39,20 @@ func TestCreate_CopiesOAuthFromFakeSource_RealKeychain(t *testing.T) {
 		_ = keychain.Default.Delete(keychain.ServiceName(srcDir))
 	})
 
-	// Run cenv create <dst> --from <src>.
+	// Compute dst name and dir, and pre-register cleanup BEFORE calling RunE
+	// to ensure keychain entry is cleaned even if RunE fails after writing.
 	dstName := "copyauth-dst-" + randSuffix(t)
+	dstDir := filepath.Join(os.Getenv("CENV_BASE"), dstName)
+	t.Cleanup(func() {
+		_ = keychain.Default.Delete(keychain.ServiceName(dstDir))
+	})
+
+	// Run cenv create <dst> --from <src>.
 	createFrom = srcName
 	defer func() { createFrom = "" }()
 	if err := createCmd.RunE(createCmd, []string{dstName}); err != nil {
 		t.Fatalf("create returned err: %v", err)
 	}
-
-	dstDir := filepath.Join(os.Getenv("CENV_BASE"), dstName)
-	t.Cleanup(func() {
-		_ = keychain.Default.Delete(keychain.ServiceName(dstDir))
-	})
 
 	// dst .claude.json has oauth.
 	raw, err := os.ReadFile(filepath.Join(dstDir, ".claude.json"))
@@ -106,20 +108,26 @@ func TestCreate_NoOAuthSource_SkipsSilently_RealKeychain(t *testing.T) {
 	}
 
 	dstName := "copyauth-dst2-" + randSuffix(t)
-	createFrom = srcName
-	defer func() { createFrom = "" }()
-	if err := createCmd.RunE(createCmd, []string{dstName}); err != nil {
-		t.Fatalf("create returned err: %v", err)
-	}
 	dstDir := filepath.Join(os.Getenv("CENV_BASE"), dstName)
 	t.Cleanup(func() {
 		_ = keychain.Default.Delete(keychain.ServiceName(dstDir))
 	})
 
+	createFrom = srcName
+	defer func() { createFrom = "" }()
+	if err := createCmd.RunE(createCmd, []string{dstName}); err != nil {
+		t.Fatalf("create returned err: %v", err)
+	}
+
 	// dst .claude.json must NOT have oauthAccount.
-	raw, _ := os.ReadFile(filepath.Join(dstDir, ".claude.json"))
+	raw, err := os.ReadFile(filepath.Join(dstDir, ".claude.json"))
+	if err != nil {
+		t.Fatalf("reading dst .claude.json: %v", err)
+	}
 	var got map[string]any
-	json.Unmarshal(raw, &got)
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatalf("parsing dst .claude.json: %v", err)
+	}
 	if _, has := got["oauthAccount"]; has {
 		t.Error("dst gained oauthAccount despite unauthed source")
 	}
