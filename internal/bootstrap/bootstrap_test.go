@@ -58,7 +58,7 @@ func TestExtractAuth_AwsAuthRefresh(t *testing.T) {
 
 func TestExtractAuth_Env(t *testing.T) {
 	input := map[string]any{
-		"env":         map[string]any{"AWS_REGION": "us-east-1"},
+		"env":          map[string]any{"AWS_REGION": "us-east-1"},
 		"apiKeyHelper": "some-helper",
 	}
 
