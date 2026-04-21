@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -40,21 +39,26 @@ var createCmd = &cobra.Command{
 			return fmt.Errorf("creating environment directory: %w", err)
 		}
 
-		// Cleanup on any subsequent error
+		// Cleanup on any subsequent error: remove envDir AND any keychain entry
+		// we may have written for it.
 		var cleanupNeeded = true
 		defer func() {
-			if cleanupNeeded {
-				os.RemoveAll(envDir)
+			if !cleanupNeeded {
+				return
 			}
+			os.RemoveAll(envDir)
+			_ = keychain.Default.Delete(keychain.ServiceName(envDir))
 		}()
 
 		var settingsData map[string]any
+		var sourceDir string // empty = no auth copy (bare or legacy auth-env)
 
 		switch {
 		case createBare:
 			settingsData = map[string]any{}
 
 		case createAuth != "":
+			// Legacy auth-<name> env, settings only, no OAuth copy.
 			authEnvName := "auth-" + createAuth
 			if !env.Exists(authEnvName) {
 				return fmt.Errorf("auth environment %q not found", authEnvName)
@@ -71,35 +75,35 @@ var createCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("finding home directory: %w", err)
 			}
-			userSettingsPath := filepath.Join(home, ".claude", "settings.json")
-			loaded, err := settings.Load(userSettingsPath)
+			userClaudeDir := filepath.Join(home, ".claude")
+			loaded, err := settings.Load(filepath.Join(userClaudeDir, "settings.json"))
 			if err != nil {
 				return fmt.Errorf("loading user settings: %w", err)
 			}
 			settingsData = loaded
+			sourceDir = userClaudeDir
 
 		case createFrom != "":
 			if !env.Exists(createFrom) {
 				return fmt.Errorf("source environment %q not found", createFrom)
 			}
-			srcSettingsPath := filepath.Join(env.Path(createFrom), "settings.json")
-			loaded, err := settings.Load(srcSettingsPath)
+			srcEnvDir := env.Path(createFrom)
+			loaded, err := settings.Load(filepath.Join(srcEnvDir, "settings.json"))
 			if err != nil {
 				return fmt.Errorf("loading source environment settings: %w", err)
 			}
 			settingsData = loaded
+			sourceDir = srcEnvDir
 
 		default:
-			// Auto-detect auth from ~/.claude/settings.json
+			// Auto-detect from ~/.claude.
 			home, err := os.UserHomeDir()
 			if err == nil {
-				userSettingsPath := filepath.Join(home, ".claude", "settings.json")
-				if loaded, err := settings.Load(userSettingsPath); err == nil {
+				userClaudeDir := filepath.Join(home, ".claude")
+				if loaded, err := settings.Load(filepath.Join(userClaudeDir, "settings.json")); err == nil {
 					settingsData = bootstrap.ExtractAuth(loaded)
 				}
-				if hasOAuth(home) {
-					logf("[cenv] Note: Anthropic OAuth detected. Login tokens don't transfer between envs; run 'cenv login %s' to authenticate this env.\n", name)
-				}
+				sourceDir = userClaudeDir
 			}
 			if settingsData == nil {
 				settingsData = map[string]any{}
@@ -112,6 +116,16 @@ var createCmd = &cobra.Command{
 
 		if err := bootstrap.WriteOnboarding(envDir); err != nil {
 			return fmt.Errorf("writing onboarding: %w", err)
+		}
+
+		if sourceDir != "" {
+			copied, err := copyAuth(sourceDir, envDir, keychain.Default)
+			if err != nil {
+				return fmt.Errorf("copying auth: %w", err)
+			}
+			if copied {
+				logf("[cenv] Copied OAuth login from %s\n", displaySourceName(sourceDir))
+			}
 		}
 
 		cleanupNeeded = false
@@ -172,25 +186,12 @@ func copyAuth(srcDir, dstEnvDir string, kc *keychain.Client) (copied bool, err e
 	return true, nil
 }
 
-// hasOAuth reports whether the user has Anthropic OAuth configured, indicated
-// by a non-empty oauthAccount field in ~/.claude.json (home root, not ~/.claude/).
-// Claude Code writes oauthAccount as an object; older versions may have used a
-// string. Both shapes are accepted.
-func hasOAuth(home string) bool {
-	data, err := os.ReadFile(filepath.Join(home, ".claude.json"))
-	if err != nil {
-		return false
+// displaySourceName formats a source dir for log messages.
+// The default user dir is shown as "~/.claude"; other paths as-is.
+func displaySourceName(dir string) string {
+	home, err := os.UserHomeDir()
+	if err == nil && dir == filepath.Join(home, ".claude") {
+		return "~/.claude"
 	}
-	var parsed map[string]any
-	if err := json.Unmarshal(data, &parsed); err != nil {
-		return false
-	}
-	switch v := parsed["oauthAccount"].(type) {
-	case string:
-		return v != ""
-	case map[string]any:
-		return len(v) > 0
-	default:
-		return false
-	}
+	return dir
 }
