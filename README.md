@@ -12,17 +12,22 @@ go install github.com/technicalpickles/cenv@latest
 
 ## Anthropic OAuth users
 
-OAuth login tokens are stored per-`CLAUDE_CONFIG_DIR` in the macOS Keychain, so they don't transfer between cenv envs. Each env needs its own login:
+`cenv create` auto-copies your OAuth login from `~/.claude` into the new env, so new envs are already authenticated:
 
 ```sh
-cenv create my-env           # creates the env; prints a hint
-cenv login my-env            # opens Claude; type /login inside the REPL
-cenv run my-env -- -p 'hi'   # env is now authenticated
+cenv create my-env           # copies OAuth (keychain + oauthAccount) from ~/.claude
+cenv run my-env -- -p 'hi'   # env is authenticated
 ```
 
-`cenv login` requires a terminal. For scripts and agents, `cenv run` fails fast with a message pointing at `cenv login` if the target env has never been authenticated.
+Cloning from another cenv env works the same way:
 
-`cenv auth create` is not available for OAuth users. The auth env pattern only carries tokens for Bedrock.
+```sh
+cenv create my-clone --from my-env   # my-clone is also authenticated
+```
+
+If you want to authenticate fresh (different account, or source has no OAuth), `cenv login <env>` drops you into Claude's REPL for `/login`. `cenv login` requires a terminal.
+
+For scripts and agents, `cenv run` fails fast with a message pointing at `cenv login` if the target env has never been authenticated.
 
 ## Running under Claude Code's sandbox
 

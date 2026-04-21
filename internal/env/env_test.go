@@ -201,7 +201,7 @@ func TestValidateName(t *testing.T) {
 		"myenv",
 		"my-env",
 		"my_env",
-		"auth-anthropic",
+		"shared-env",
 		"test123",
 	}
 	for _, name := range valid {

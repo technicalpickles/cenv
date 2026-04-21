@@ -30,7 +30,7 @@ var runCmd = &cobra.Command{
 			return fmt.Errorf("preflight failed: %w", err)
 		}
 
-		if _, err := auth.Detect(envDir); err != nil {
+		if err := auth.Detect(envDir); err != nil {
 			return fmt.Errorf("env %q has no auth configured; run 'cenv login %s' first", name, name)
 		}
 

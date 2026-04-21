@@ -121,7 +121,7 @@ func Inspect(name string) (*Info, error) {
 		return nil, fmt.Errorf("walking env %q: %w", name, err)
 	}
 
-	_, authErr := auth.Detect(p)
+	authErr := auth.Detect(p)
 	return &Info{
 		Name:    name,
 		Path:    p,
