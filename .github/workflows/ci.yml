@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+
+      - name: Format check
+        run: |
+          mise run fmt
+          git diff --exit-code
+
+      - name: Vet
+        run: mise run vet
+
+      - name: Test
+        run: mise run test
