@@ -34,8 +34,9 @@ jobs:
           staging="cenv-${version}-darwin-universal"
           mkdir "$staging"
 
-          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o cenv-arm64 ./cmd/cenv
-          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o cenv-amd64 ./cmd/cenv
+          ldflags="-X main.version=${version}"
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "$ldflags" -o cenv-arm64 ./cmd/cenv
+          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags "$ldflags" -o cenv-amd64 ./cmd/cenv
           lipo -create -output "$staging/cenv" cenv-arm64 cenv-amd64
           rm cenv-arm64 cenv-amd64
 
