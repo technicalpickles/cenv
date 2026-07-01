@@ -1,0 +1,49 @@
+name: Release
+
+# A universal (arm64 + amd64) macOS binary is attached to the GitHub Release
+# that release-please cuts when its release PR is merged (see
+# release-please.yml). This workflow fires on that published release, cross
+# -compiles both slices from a single runner (cenv has no cgo dependency, so
+# GOARCH cross-compilation works cleanly), and lipo's them together.
+#
+# Note: this only runs if the release was created with a token that triggers
+# downstream workflows (RELEASE_PLEASE_TOKEN), not the default GITHUB_TOKEN.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: jdx/mise-action@v2
+
+      - name: Build universal binary
+        run: |
+          version="${TAG#v}"
+          staging="cenv-${version}-darwin-universal"
+          mkdir "$staging"
+
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o cenv-arm64 ./cmd/cenv
+          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o cenv-amd64 ./cmd/cenv
+          lipo -create -output "$staging/cenv" cenv-arm64 cenv-amd64
+          rm cenv-arm64 cenv-amd64
+
+          cp README.md "$staging/"
+          tar czf "${staging}.tar.gz" "$staging"
+          echo "ASSET=${staging}.tar.gz" >> "$GITHUB_ENV"
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" "$ASSET" --clobber --repo "$GITHUB_REPOSITORY"
