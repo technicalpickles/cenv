@@ -13,8 +13,8 @@ func TestLoginCmd_NonexistentEnv(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for nonexistent env, got nil")
 	}
-	if !strings.Contains(err.Error(), "does not exist") {
-		t.Errorf("error = %q, want it to mention 'does not exist'", err.Error())
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("error = %q, want it to mention 'not found'", err.Error())
 	}
 }
 

@@ -7,6 +7,18 @@ import (
 	"testing"
 )
 
+func TestRunCmd_NonexistentEnv(t *testing.T) {
+	t.Setenv("CENV_BASE", t.TempDir())
+
+	err := runCmd.RunE(runCmd, []string{"does-not-exist"})
+	if err == nil {
+		t.Fatal("expected error for nonexistent env, got nil")
+	}
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("error = %q, want it to mention 'not found'", err.Error())
+	}
+}
+
 func TestRunCmd_NoAuth(t *testing.T) {
 	base := t.TempDir()
 	t.Setenv("CENV_BASE", base)

@@ -11,8 +11,9 @@ import (
 )
 
 var loginCmd = &cobra.Command{
-	Use:   "login <name>",
-	Short: "Open Claude in an environment so you can run /login",
+	Use:     "login <name>",
+	Short:   "Open Claude in an environment so you can run /login",
+	Example: `  cenv login myenv`,
 	Long: `Opens the Claude Code REPL with CLAUDE_CONFIG_DIR pointed at the named
 environment. Type /login inside the REPL to authenticate this env.
 
@@ -22,7 +23,7 @@ create envs via 'cenv create' and prompt the user to run 'cenv login'.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		if !env.Exists(name) {
-			return fmt.Errorf("environment %q does not exist", name)
+			return fmt.Errorf("environment %q not found", name)
 		}
 		if !isTerminal(os.Stdin) {
 			return fmt.Errorf("cenv login requires an interactive terminal")

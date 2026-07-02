@@ -3,8 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"text/tabwriter"
 
 	"github.com/spf13/cobra"
+	"github.com/technicalpickles/cenv/internal/auth"
 	"github.com/technicalpickles/cenv/internal/env"
 )
 
@@ -43,10 +46,16 @@ var listCmd = &cobra.Command{
 			return nil
 		}
 
+		w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+		fmt.Fprintln(w, "NAME\tAUTH")
 		for _, name := range names {
-			fmt.Println(name)
+			status := "no"
+			if auth.Detect(env.Path(name)) == nil {
+				status = "yes"
+			}
+			fmt.Fprintf(w, "%s\t%s\n", name, status)
 		}
-		return nil
+		return w.Flush()
 	},
 }
 

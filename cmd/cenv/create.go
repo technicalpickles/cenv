@@ -21,9 +21,16 @@ var (
 var createCmd = &cobra.Command{
 	Use:   "create <name>",
 	Short: "Create a new environment",
-	Args:  cobra.ExactArgs(1),
+	Example: `  cenv create myenv
+  cenv create myenv --from user
+  cenv create myenv --bare`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
+
+		if createBare && createFrom != "" {
+			return fmt.Errorf("--bare and --from are mutually exclusive")
+		}
 
 		if err := env.ValidateName(name); err != nil {
 			return err
