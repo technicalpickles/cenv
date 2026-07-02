@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`cenv` manages isolated Claude Code configuration directories — each env gets its own `settings.json`, `.claude.json`, plugins, hooks, and session history, independent of `~/.claude/`. Think `virtualenv` for Claude Code. A Go CLI built with cobra; no other runtime dependencies.
+`cenv` manages isolated Claude Code configuration directories — each env gets its own `settings.json`, `.claude.json`, plugins, hooks, and session history, independent of `~/.claude/`. Think `virtualenv` for Claude Code. A Go CLI built with cobra, with `fatih/color` for terminal output styling.
 
 ## Commands
 
