@@ -16,7 +16,7 @@ var removeCmd = &cobra.Command{
 	Use:   "remove <name>",
 	Short: "Remove an environment",
 	Example: `  cenv remove myenv
-	  cenv remove myenv --force`,
+  cenv remove myenv --force`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
