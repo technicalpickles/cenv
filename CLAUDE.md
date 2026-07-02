@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```sh
 mise install       # install the pinned Go toolchain (go 1.26.1, see mise.toml)
 mise run build      # go build -o cenv ./cmd/cenv
+mise run install    # go install ./cmd/cenv (drops binary in $GOBIN or $GOPATH/bin — make sure that's on PATH)
 mise run test       # go test ./...
 mise run vet        # go vet ./...
 mise run fmt        # go fmt ./...
@@ -33,6 +34,12 @@ go test -tags keychain ./cmd/cenv/...
 ```
 
 CI (`.github/workflows/ci.yml`) runs `mise run check` on `macos-latest` for every push to `main` and every PR. **Branch protection on `main` requires a passing CI run and a PR — this is enforced for admins too, so direct `git push` to `main` will be rejected.** Always work on a branch and open a PR.
+
+## Releases
+
+`release-please` (`.github/workflows/release-please.yml`) watches pushes to `main`, maintains a release PR that bumps the version and generates `CHANGELOG.md` from conventional commits, and cuts the git tag + GitHub Release when that PR merges. The published-release event then fires `.github/workflows/release.yml`, which cross-compiles a darwin arm64+amd64 binary, `lipo`s them into a universal binary, and attaches it to the release.
+
+**Gotcha:** this cross-workflow trigger only fires if the release was created with a PAT/GitHub App token in the `RELEASE_PLEASE_TOKEN` secret — the default `GITHUB_TOKEN` is blocked by GitHub from triggering other workflows, so without that secret release PRs still open but merging them silently skips the binary build.
 
 ## Architecture
 
