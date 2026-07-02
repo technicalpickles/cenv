@@ -25,6 +25,10 @@ var createCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 
+		if createBare && createFrom != "" {
+			return fmt.Errorf("--bare and --from are mutually exclusive")
+		}
+
 		if err := env.ValidateName(name); err != nil {
 			return err
 		}
