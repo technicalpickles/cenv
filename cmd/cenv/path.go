@@ -8,9 +8,10 @@ import (
 )
 
 var pathCmd = &cobra.Command{
-	Use:   "path <name>",
-	Short: "Print the directory path of an environment",
-	Args:  cobra.ExactArgs(1),
+	Use:     "path <name>",
+	Short:   "Print the directory path of an environment",
+	Example: `  cenv path myenv`,
+	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		if !env.Exists(name) {

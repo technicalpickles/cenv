@@ -16,9 +16,10 @@ var settingsCmd = &cobra.Command{
 }
 
 var settingsShowCmd = &cobra.Command{
-	Use:   "show <name>",
-	Short: "Show settings for an environment as JSON",
-	Args:  cobra.ExactArgs(1),
+	Use:     "show <name>",
+	Short:   "Show settings for an environment as JSON",
+	Example: `  cenv settings show myenv`,
+	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		if !env.Exists(name) {
@@ -41,9 +42,10 @@ var settingsShowCmd = &cobra.Command{
 }
 
 var settingsGetCmd = &cobra.Command{
-	Use:   "get <name> <key>",
-	Short: "Get a value from settings by dot-path key",
-	Args:  cobra.ExactArgs(2),
+	Use:     "get <name> <key>",
+	Short:   "Get a value from settings by dot-path key",
+	Example: `  cenv settings get myenv statusLine.type`,
+	Args:    cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		key := args[1]
@@ -78,9 +80,10 @@ var settingsGetCmd = &cobra.Command{
 }
 
 var settingsMergeCmd = &cobra.Command{
-	Use:   "merge <name> <json|file>",
-	Short: "Deep merge JSON or a JSON file into environment settings",
-	Args:  cobra.ExactArgs(2),
+	Use:     "merge <name> <json|file>",
+	Short:   "Deep merge JSON or a JSON file into environment settings",
+	Example: `  cenv settings merge myenv '{"statusLine":{"type":"command"}}'`,
+	Args:    cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		arg := args[1]

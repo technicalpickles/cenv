@@ -13,6 +13,8 @@ import (
 var trustCmd = &cobra.Command{
 	Use:   "trust <name> <path> [path...]",
 	Short: "Mark workspace path(s) as trusted in an environment",
+	Example: `  cenv trust myenv ~/projects/foo
+  cenv trust myenv ~/projects/foo ~/projects/bar`,
 	Long: `Mark one or more workspace paths as trusted in an environment's Claude
 config. This pre-accepts the "Do you trust this directory?" dialog that
 Claude Code shows on first launch in a new workspace, which is useful for

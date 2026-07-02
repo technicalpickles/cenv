@@ -14,8 +14,10 @@ import (
 )
 
 var runCmd = &cobra.Command{
-	Use:                "run <name> [-- claude-args...]",
-	Short:              "Launch Claude in an environment",
+	Use:   "run <name> [-- claude-args...]",
+	Short: "Launch Claude in an environment",
+	Example: `  cenv run myenv
+  cenv run myenv -- --model opus`,
 	Args:               cobra.MinimumNArgs(1),
 	DisableFlagParsing: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
