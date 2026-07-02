@@ -3,6 +3,7 @@ package env_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/technicalpickles/cenv/internal/env"
@@ -129,8 +130,12 @@ func TestRemove(t *testing.T) {
 		tmp := t.TempDir()
 		t.Setenv("CENV_BASE", tmp)
 
-		if err := env.Remove("nonexistent"); err == nil {
-			t.Error("Remove(\"nonexistent\") expected error, got nil")
+		err := env.Remove("nonexistent")
+		if err == nil {
+			t.Fatal("Remove(\"nonexistent\") expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), "environment \"nonexistent\" not found") {
+			t.Errorf("Remove() error = %q, want it to contain %q", err.Error(), "environment \"nonexistent\" not found")
 		}
 	})
 }

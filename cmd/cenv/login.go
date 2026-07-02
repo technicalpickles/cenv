@@ -22,7 +22,7 @@ create envs via 'cenv create' and prompt the user to run 'cenv login'.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		if !env.Exists(name) {
-			return fmt.Errorf("environment %q does not exist", name)
+			return fmt.Errorf("environment %q not found", name)
 		}
 		if !isTerminal(os.Stdin) {
 			return fmt.Errorf("cenv login requires an interactive terminal")

@@ -21,7 +21,7 @@ var runCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		if !env.Exists(name) {
-			return fmt.Errorf("environment %q does not exist", name)
+			return fmt.Errorf("environment %q not found", name)
 		}
 
 		envDir := env.Path(name)

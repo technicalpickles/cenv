@@ -70,7 +70,7 @@ func List() ([]string, error) {
 func Remove(name string) error {
 	p := Path(name)
 	if _, err := os.Stat(p); os.IsNotExist(err) {
-		return fmt.Errorf("env %q not found", name)
+		return fmt.Errorf("environment %q not found", name)
 	}
 	return os.RemoveAll(p)
 }
