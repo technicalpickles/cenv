@@ -3,11 +3,11 @@ go = "1.26.1"
 
 [tasks.build]
 description = "Build cenv binary to ./cenv"
-run = "go build -o cenv ./cmd/cenv"
+run = "go build -ldflags \"-X main.version=$(git describe --tags --always --dirty)\" -o cenv ./cmd/cenv"
 
 [tasks.install]
 description = "Install cenv to $GOBIN (or $GOPATH/bin)"
-run = "go install ./cmd/cenv"
+run = "go install -ldflags \"-X main.version=$(git describe --tags --always --dirty)\" ./cmd/cenv"
 
 [tasks.test]
 description = "Run tests"

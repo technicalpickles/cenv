@@ -10,6 +10,9 @@ import (
 
 var quiet bool
 
+// version is overridden at build time via -ldflags "-X main.version=...".
+var version = "dev"
+
 var rootCmd = &cobra.Command{
 	Use:   "cenv",
 	Short: "Manage isolated Claude Code configuration directories",
@@ -17,6 +20,7 @@ var rootCmd = &cobra.Command{
 Each one gets its own settings, permissions, hooks, plugins, and session
 history, completely independent of ~/.claude/. Think virtualenv for Claude Code.`,
 	SilenceUsage: true,
+	Version:      version,
 }
 
 func init() {
