@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/technicalpickles/cenv/internal/env"
+	"github.com/technicalpickles/cenv/internal/style"
 )
 
 var removeForce bool
@@ -22,14 +23,14 @@ var removeCmd = &cobra.Command{
 		name := args[0]
 
 		if !removeForce && !confirmRemoval(name) {
-			fmt.Println("Aborted.")
+			fmt.Println(style.Secondary("Aborted."))
 			return nil
 		}
 
 		if err := env.Remove(name); err != nil {
 			return err
 		}
-		logf("[cenv] Removed environment %q\n", name)
+		logf("%s\n", style.Success("Removed environment %q", name))
 		return nil
 	},
 }

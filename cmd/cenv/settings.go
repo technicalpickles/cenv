@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/technicalpickles/cenv/internal/env"
 	"github.com/technicalpickles/cenv/internal/settings"
+	"github.com/technicalpickles/cenv/internal/style"
 )
 
 var settingsCmd = &cobra.Command{
@@ -102,7 +103,7 @@ var settingsMergeCmd = &cobra.Command{
 			return err
 		}
 
-		logf("[cenv] Merged settings into %q\n", name)
+		logf("%s\n", style.Success("Merged settings into %q", name))
 		return nil
 	},
 }

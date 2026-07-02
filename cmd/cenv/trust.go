@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/technicalpickles/cenv/internal/claudeconfig"
 	"github.com/technicalpickles/cenv/internal/env"
+	"github.com/technicalpickles/cenv/internal/style"
 )
 
 var trustCmd = &cobra.Command{
@@ -50,7 +51,7 @@ Paths are resolved to absolute paths before being written.`,
 		}
 
 		for _, p := range absPaths {
-			logf("[cenv] Trusted %q in %q\n", p, name)
+			logf("%s\n", style.Success("Trusted %q in %q", p, name))
 		}
 		return nil
 	},

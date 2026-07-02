@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/technicalpickles/cenv/internal/env"
+	"github.com/technicalpickles/cenv/internal/style"
 )
 
 var loginCmd = &cobra.Command{
@@ -36,7 +37,7 @@ create envs via 'cenv create' and prompt the user to run 'cenv login'.`,
 			return fmt.Errorf("claude not found in PATH")
 		}
 
-		logf("[cenv] Opening Claude in %q; run /login inside the REPL.\n", name)
+		logf("%s\n", style.Info("Opening Claude in %q; run /login inside the REPL.", name))
 
 		environ := append(os.Environ(), fmt.Sprintf("CLAUDE_CONFIG_DIR=%s", envDir))
 		return syscall.Exec(claudePath, []string{"claude"}, environ)

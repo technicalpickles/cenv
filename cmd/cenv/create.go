@@ -11,6 +11,7 @@ import (
 	"github.com/technicalpickles/cenv/internal/env"
 	"github.com/technicalpickles/cenv/internal/keychain"
 	"github.com/technicalpickles/cenv/internal/settings"
+	"github.com/technicalpickles/cenv/internal/style"
 )
 
 var (
@@ -121,12 +122,12 @@ var createCmd = &cobra.Command{
 				return fmt.Errorf("copying auth: %w", err)
 			}
 			if copied {
-				logf("[cenv] Copied OAuth login from %s\n", displaySourceName(sourceDir))
+				logf("%s\n", style.Success("Copied OAuth login from %s", displaySourceName(sourceDir)))
 			}
 		}
 
 		cleanupNeeded = false
-		logf("[cenv] Created environment %q\n", name)
+		logf("%s\n", style.Success("Created environment %q", name))
 		return nil
 	},
 }
@@ -184,7 +185,7 @@ func copyAuth(srcConfigDir, srcClaudeJSON, dstEnvDir string, kc *keychain.Client
 	}
 	if err := claudeconfig.MergeOAuth(filepath.Join(dstEnvDir, ".claude.json"), srcOAuth); err != nil {
 		if delErr := kc.Delete(dstSvc); delErr != nil {
-			logf("[cenv] Warning: failed to roll back keychain entry %q: %v\n", dstSvc, delErr)
+			logf("%s\n", style.Warning("failed to roll back keychain entry %q: %v", dstSvc, delErr))
 		}
 		return false, fmt.Errorf("merging OAuth into destination config: %w", err)
 	}
