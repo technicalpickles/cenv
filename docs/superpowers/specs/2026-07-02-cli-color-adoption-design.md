@@ -44,9 +44,10 @@ func Error(format string, args ...any) string     // red,   "✗ " prefix
 func Warning(format string, args ...any) string   // yellow,"⚠ " prefix
 func Info(format string, args ...any) string       // blue,  "→ " prefix
 func Secondary(text string) string                  // gray, no prefix
+func Green(text string) string                       // green, no prefix
 ```
 
-`Secondary` has no symbol prefix (matching the guide's "Gray = timestamps/metadata" usage, which is de-emphasis, not a status) — used for `remove`'s "Aborted." and `list`'s "no" AUTH value.
+`Secondary` and `Green` have no symbol prefix — they're for table cells, not status lines. A repeated ✓/✗ down every row of `list`'s AUTH column would be redundant with the column header, which already conveys the meaning; `Secondary` (matching the guide's "Gray = timestamps/metadata" usage) is `list`'s "no" and `remove`'s "Aborted.", `Green` is `list`'s "yes".
 
 ### Enable/disable logic
 
@@ -75,7 +76,7 @@ Deliberately checking `os.Stdout` only, not stdout+stderr separately: cenv's col
 | `settings.go` (merged line) | `[cenv] Merged settings into %q` | `style.Success` |
 | `login.go` (opening line) | `[cenv] Opening Claude in %q; run /login inside the REPL.` | `style.Info` |
 | `run.go` (using line) | `[cenv] Using %q (%s)` | `style.Info` |
-| `list.go` (AUTH column) | `yes` / `no` | `style.Success("yes")` / `style.Secondary("no")` |
+| `list.go` (AUTH column) | `yes` / `no` | `style.Green("yes")` / `style.Secondary("no")` |
 
 Untouched: `remove`'s `y/N` prompt text (not a status message), `list`'s "No environments yet." / "Create one: ..." hint (plain informational text, not worth a symbol), and all of `path`, `settings get`/`settings show`, `list --json`.
 
