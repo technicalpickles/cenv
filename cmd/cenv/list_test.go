@@ -32,11 +32,13 @@ func TestListCmd_PlainOutputShowsAuthStatus(t *testing.T) {
 	}
 	orig := os.Stdout
 	os.Stdout = w
+	t.Cleanup(func() { os.Stdout = orig })
+	origListJSON := listJSON
 	listJSON = false
+	t.Cleanup(func() { listJSON = origListJSON })
 
 	runErr := listCmd.RunE(listCmd, nil)
 	w.Close()
-	os.Stdout = orig
 
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
