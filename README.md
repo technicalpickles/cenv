@@ -10,6 +10,10 @@ See `projects/cenv/2026-04-15-cenv-design.md` in the pickleton repo for the full
 go install github.com/technicalpickles/cenv/cmd/cenv@latest
 ```
 
+This drops the `cenv` binary in `$GOBIN` (or `$GOPATH/bin`, or `~/go/bin` if neither is set) — make sure that directory is on your `PATH`. Once a tagged release exists, `@latest` resolves to it directly; until then it builds from the latest commit on `main`.
+
+A prebuilt macOS binary is also attached to each [GitHub Release](https://github.com/technicalpickles/cenv/releases), if you'd rather skip the Go toolchain entirely.
+
 ## Anthropic OAuth users
 
 `cenv create` auto-copies your OAuth login from `~/.claude` into the new env, so new envs are already authenticated:
@@ -60,6 +64,8 @@ mise run install   # go install ./cmd/cenv
 mise run test      # go test ./...
 mise run check     # fmt + vet + test
 ```
+
+`mise run install` (and the raw `go install ./cmd/cenv` below) puts the binary in `$GOBIN`/`$GOPATH/bin`/`~/go/bin` like the GitHub install above — make sure that directory is on your `PATH`, or `cenv` won't be found afterward.
 
 Without mise, the raw commands work too:
 
