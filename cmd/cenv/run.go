@@ -11,6 +11,7 @@ import (
 	"github.com/technicalpickles/cenv/internal/auth"
 	"github.com/technicalpickles/cenv/internal/env"
 	"github.com/technicalpickles/cenv/internal/settings"
+	"github.com/technicalpickles/cenv/internal/style"
 )
 
 var runCmd = &cobra.Command{
@@ -44,7 +45,7 @@ var runCmd = &cobra.Command{
 			claudeArgs = args[2:]
 		}
 
-		logf("[cenv] Using %q (%s)\n", name, envDir)
+		logf("%s\n", style.Info("Using %q (%s)", name, envDir))
 
 		claudePath, err := exec.LookPath("claude")
 		if err != nil {
