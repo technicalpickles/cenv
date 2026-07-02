@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/technicalpickles/cenv/internal/auth"
 	"github.com/technicalpickles/cenv/internal/env"
+	"github.com/technicalpickles/cenv/internal/style"
 )
 
 var listJSON bool
@@ -49,9 +50,9 @@ var listCmd = &cobra.Command{
 		w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
 		fmt.Fprintln(w, "NAME\tAUTH")
 		for _, name := range names {
-			status := "no"
+			status := style.Secondary("no")
 			if auth.Detect(env.Path(name)) == nil {
-				status = "yes"
+				status = style.Green("yes")
 			}
 			fmt.Fprintf(w, "%s\t%s\n", name, status)
 		}
