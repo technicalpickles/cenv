@@ -43,7 +43,7 @@ CI (`.github/workflows/ci.yml`) runs `mise run check` on `macos-latest` for ever
 
 ## Architecture
 
-The CLI layer (`cmd/cenv/`) is thin glue: each subcommand file (`create.go`, `run.go`, `login.go`, etc.) registers a cobra command in its own `init()` and calls into `internal/` packages, which hold all the actual logic and are independently unit-tested. `main.go` just owns the root command and a shared `logf` helper (writes to stderr, silenced by `--quiet`/`CENV_QUIET`).
+The CLI layer (`cmd/cenv/`) is thin glue: each subcommand file (`create.go`, `claude.go`, `exec.go`, `login.go`, etc.) registers a cobra command in its own `init()` and calls into `internal/` packages, which hold all the actual logic and are independently unit-tested. `main.go` just owns the root command and a shared `logf` helper (writes to stderr, silenced by `--quiet`/`CENV_QUIET`).
 
 Packages, in the order data flows through `cenv create`:
 

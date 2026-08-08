@@ -101,6 +101,10 @@ check_fail "exec on unauthenticated env fails" "$BIN" exec demo -- true
 check_fail "exec with missing separator fails" "$BIN" exec demo true
 check_fail "login on missing env fails" "$BIN" login ghost
 
+echo "== exec launches with CLAUDE_CONFIG_DIR set =="
+check "settings merge adds auth to demo" "$BIN" settings merge demo '{"awsAuthRefresh":{"region":"us-east-1"}}'
+check_contains "exec sets CLAUDE_CONFIG_DIR for launched command" "$(cd "$CENV_BASE" && pwd)/demo" "$BIN" exec demo -- printenv CLAUDE_CONFIG_DIR
+
 echo
 echo "== $pass passed, $fail failed =="
 [ "$fail" -eq 0 ]
