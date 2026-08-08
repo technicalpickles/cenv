@@ -52,7 +52,7 @@ Packages, in the order data flows through `cenv create`:
 - **`internal/bootstrap`** — writes the two files a fresh env needs: `.claude.json` with onboarding pre-completed (`WriteOnboarding`) and `settings.json` (`WriteSettings`). `ExtractAuth` pulls just the auth-relevant keys (`env`, `awsAuthRefresh`, `statusLine`) out of a settings map, used when auto-detecting from `~/.claude` (as opposed to `--from`, which clones everything).
 - **`internal/claudeconfig`** — reads/writes specific fields of `.claude.json` without disturbing the rest: `ReadOAuth`/`MergeOAuth` for the OAuth account blob, `MergeTrust` for workspace-trust entries (`projects.<path>.hasTrustDialogAccepted`).
 - **`internal/keychain`** — wraps the macOS `security` CLI to store/read/delete OAuth tokens, mirroring claude-code's own keychain scheme: service name is `"Claude Code-credentials"` for `~/.claude`, or `"Claude Code-credentials-<8 hex chars of sha256(configDir)>"` for any other config dir. Shells out via a `Runner` interface so tests can stub `security` without touching the real keychain.
-- **`internal/auth`** — `Detect(configDir)` is the auth predicate used both for `env.Info.HasAuth` and as a preflight check in `cenv run`: nil error means either `settings.json` has a non-empty `awsAuthRefresh` (Bedrock) or `.claude.json` has a non-empty `oauthAccount` (Anthropic OAuth).
+- **`internal/auth`** — `Detect(configDir)` is the auth predicate used for `env.Info.HasAuth` and as a preflight check shared by `cenv claude`/`cenv run` and `cenv exec` (via `preflightEnv` in `cmd/cenv/preflight.go`): nil error means either `settings.json` has a non-empty `awsAuthRefresh` (Bedrock) or `.claude.json` has a non-empty `oauthAccount` (Anthropic OAuth).
 
 ### The OAuth-copy path (`cmd/cenv/create.go: copyAuth`)
 
@@ -65,4 +65,4 @@ The `.claude.json` path is asymmetric depending on the source: `~/.claude.json` 
 
 ### Process replacement, not subprocess
 
-`cenv run` and `cenv login` both use `syscall.Exec` (not `os/exec` + wait) to replace the current process with `claude`, after injecting `CLAUDE_CONFIG_DIR=<envdir>` into the environment. This means signals, TTY, and exit codes pass straight through to the real `claude` process — there's no cenv process left to relay them.
+`cenv claude`/`cenv run` and `cenv login` both use `syscall.Exec` (not `os/exec` + wait) to replace the current process with `claude`, after injecting `CLAUDE_CONFIG_DIR=<envdir>` into the environment. `cenv exec` uses the same mechanism to launch an arbitrary command instead. This means signals, TTY, and exit codes pass straight through to the launched process — there's no cenv process left to relay them.

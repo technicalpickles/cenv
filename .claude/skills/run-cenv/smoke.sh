@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Smoke-drives the cenv CLI end-to-end in an isolated sandbox.
 # Exercises env lifecycle (create/list/path/remove), settings (get/merge/show),
-# trust, and run/login's pre-flight error paths (missing env, missing auth).
+# trust, and claude/exec/login's pre-flight error paths (missing env, missing auth).
 #
 # Does NOT touch ~/.claude or the real macOS keychain: CENV_BASE points at a
 # throwaway directory, and every env here is created --bare so no OAuth token
@@ -92,9 +92,13 @@ check_contains "clone has source settings" '"Bash(ls:*)"' "$BIN" settings show d
 check "remove demo-clone" "$BIN" remove demo-clone
 check_fail "remove already-removed env fails" "$BIN" remove demo-clone
 
-echo "== run / login pre-flight (no nested Claude REPL launch) =="
-check_fail "run on missing env fails" "$BIN" run ghost -- -p hi
-check_fail "run on unauthenticated env fails" "$BIN" run demo -- -p hi
+echo "== claude / exec / login pre-flight (no nested process launch) =="
+check_fail "claude on missing env fails" "$BIN" claude ghost -- -p hi
+check_fail "claude on unauthenticated env fails" "$BIN" claude demo -- -p hi
+check_fail "run (deprecated alias) on missing env fails" "$BIN" run ghost -- -p hi
+check_fail "exec on missing env fails" "$BIN" exec ghost -- true
+check_fail "exec on unauthenticated env fails" "$BIN" exec demo -- true
+check_fail "exec with missing separator fails" "$BIN" exec demo true
 check_fail "login on missing env fails" "$BIN" login ghost
 
 echo

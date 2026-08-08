@@ -1,6 +1,6 @@
 ---
 name: run-cenv
-description: Build, run, and smoke-test the cenv CLI (manages isolated Claude Code config directories, like virtualenv for Claude Code). Use when asked to run cenv, build it, test it, or verify its subcommands (create/list/path/remove/settings/trust/run/login) work.
+description: Build, run, and smoke-test the cenv CLI (manages isolated Claude Code config directories, like virtualenv for Claude Code). Use when asked to run cenv, build it, test it, or verify its subcommands (create/list/path/remove/settings/trust/claude/exec/login) work.
 ---
 
 cenv is a Go CLI, not a GUI/server — there's no window or port to drive.
@@ -33,7 +33,8 @@ Confirm it built:
 
 ```bash
 ./cenv --help
-# → lists: create, list, path, remove, run, settings, trust, login, completion
+# → lists: create, list, path, remove, claude, exec, settings, trust, login, completion
+# (run still works too — it's a deprecated alias for claude, hidden from this list)
 ```
 
 ## Run (agent path): smoke script
@@ -52,8 +53,9 @@ What it does: sets `CENV_BASE` to a throwaway temp dir (never touches
 - `settings merge` / `settings show` / `settings get <dotpath>`
 - `trust <env> <path>` and confirms it lands in `<env>/.claude.json`
 - `remove`, including double-remove rejection
-- `run` / `login` pre-flight checks: missing env, and missing-auth
-  rejection (it does NOT launch the nested Claude REPL — see Gotchas)
+- `claude` / `exec` / `login` pre-flight checks: missing env, and
+  missing-auth rejection (it does NOT launch the nested Claude REPL or
+  an arbitrary command — see Gotchas)
 
 Every check is `create --bare`, so no OAuth token is ever written to the
 real macOS keychain. Cleans up its temp dir on exit via `trap`.
@@ -85,7 +87,7 @@ rm -rf "$CENV_BASE"
 
 ## Run (human path)
 
-`cenv run <name> -- <claude-args>` and `cenv login <name>` both
+`cenv claude <name> -- <claude-args>` and `cenv login <name>` both
 `syscall.Exec` into the real `claude` binary (found via `PATH`) with
 `CLAUDE_CONFIG_DIR` pointed at the env dir — they replace the current
 process, so they only make sense in an interactive terminal against a
@@ -93,7 +95,15 @@ real, authenticated env:
 
 ```bash
 cenv create myenv                  # auto-copies OAuth from ~/.claude if logged in
-cenv run myenv -- -p 'hi'          # or: cenv login myenv, then /login inside Claude
+cenv claude myenv -- -p 'hi'       # or: cenv login myenv, then /login inside Claude
+```
+
+`cenv exec <name> -- <command> [args...]` works the same way but for any
+command, not just `claude` — useful for other tools built on the Claude
+Agent SDK:
+
+```bash
+cenv exec myenv -- a2acode serve
 ```
 
 Not scripted here: it hands off to Claude Code's own REPL, which is a
@@ -109,12 +119,12 @@ All 7 packages pass (`cmd/cenv`, `internal/{auth,bootstrap,claudeconfig,env,keyc
 
 ## Gotchas
 
-- **`cenv run --help` doesn't work as you'd expect.** `run` uses
-  `cobra.MinimumNArgs(1)` + `DisableFlagParsing: true` so it can pass
-  `-- <claude-args>` through untouched. That means `--help` is parsed
-  as the environment name, so `cenv run --help` fails with `environment
-  "--help" does not exist` instead of printing usage. Use `cenv help
-  run` instead.
+- **`cenv claude --help` / `cenv exec --help` don't work as you'd
+  expect.** Both use `cobra.MinimumNArgs(1)` + `DisableFlagParsing:
+  true` so they can pass `-- <args>` through untouched. That means
+  `--help` is parsed as the environment name, so `cenv claude --help`
+  fails with `environment "--help" does not exist` instead of printing
+  usage. Use `cenv help claude` / `cenv help exec` instead.
 - **`create` (without `--bare`/`--from`) writes to the real macOS
   keychain** if `~/.claude` has an OAuth login — it copies the token so
   the new env is pre-authenticated. Fine when that's genuinely what you
