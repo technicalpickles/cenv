@@ -5,6 +5,8 @@ import "testing"
 func TestHelpExamples_Present(t *testing.T) {
 	cases := map[string]string{
 		"create":         createCmd.Example,
+		"claude":         claudeCmd.Example,
+		"exec":           execCmd.Example,
 		"run":            runCmd.Example,
 		"login":          loginCmd.Example,
 		"remove":         removeCmd.Example,

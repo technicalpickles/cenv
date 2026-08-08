@@ -19,8 +19,8 @@ A prebuilt macOS binary is also attached to each [GitHub Release](https://github
 `cenv create` auto-copies your OAuth login from `~/.claude` into the new env, so new envs are already authenticated:
 
 ```sh
-cenv create my-env           # copies OAuth (keychain + oauthAccount) from ~/.claude
-cenv run my-env -- -p 'hi'   # env is authenticated
+cenv create my-env              # copies OAuth (keychain + oauthAccount) from ~/.claude
+cenv claude my-env -- -p 'hi'   # env is authenticated
 ```
 
 Cloning from another cenv env works the same way:
@@ -31,7 +31,15 @@ cenv create my-clone --from my-env   # my-clone is also authenticated
 
 If you want to authenticate fresh (different account, or source has no OAuth), `cenv login <env>` drops you into Claude's REPL for `/login`. `cenv login` requires a terminal.
 
-For scripts and agents, `cenv run` fails fast with a message pointing at `cenv login` if the target env has never been authenticated.
+For scripts and agents, `cenv claude` fails fast with a message pointing at `cenv login` if the target env has never been authenticated. (`cenv run` still works as a deprecated alias for `cenv claude`.)
+
+To run something other than `claude` itself under an env's config — e.g. a different tool built on the Claude Agent SDK — use `cenv exec`:
+
+```sh
+cenv exec my-env -- a2acode serve
+```
+
+`cenv exec` runs the same auth pre-flight as `cenv claude`, then execs whatever command you give it with `CLAUDE_CONFIG_DIR` pointed at the env.
 
 ## Running under Claude Code's sandbox
 

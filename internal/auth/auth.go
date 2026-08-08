@@ -5,7 +5,8 @@
 //  2. Anthropic OAuth: .claude.json has a non-empty "oauthAccount" (string or object)
 //
 // Callers use Detect as a predicate (error == nil means "authenticated")
-// for pre-flight checks in cenv run and the HasAuth field in env.Info.
+// for pre-flight checks in cenv claude/run/exec and the HasAuth field in
+// env.Info.
 package auth
 
 import (
