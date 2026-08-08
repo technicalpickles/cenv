@@ -18,7 +18,7 @@
 
 ---
 
-### shared-preflight-helper
+### Task 1: shared-preflight-helper
 
 **Files:**
 - Create: `cmd/cenv/preflight.go`
@@ -152,7 +152,7 @@ git commit -m "feat(cmd): extract preflightEnv helper for env/settings/auth chec
 
 ---
 
-### rename-run-to-claude
+### Task 2: rename-run-to-claude
 
 **Files:**
 - Rename (git mv): `cmd/cenv/run.go` → `cmd/cenv/claude.go`
@@ -362,7 +362,7 @@ git commit -m "feat(cmd): rename run to claude, keep run as a deprecated alias"
 
 ---
 
-### exec-command
+### Task 3: exec-command
 
 **Files:**
 - Create: `cmd/cenv/exec.go`
@@ -569,7 +569,7 @@ git commit -m "feat(cmd): add exec command to run arbitrary commands in an envir
 
 ---
 
-### docs-and-smoke-updates
+### Task 4: docs-and-smoke-updates
 
 **Files:**
 - Modify: `README.md`
