@@ -41,6 +41,18 @@ cenv exec my-env -- a2acode serve
 
 `cenv exec` runs the same auth pre-flight as `cenv claude`, then execs whatever command you give it with `CLAUDE_CONFIG_DIR` pointed at the env.
 
+### Checking that an env's login still works
+
+Each env's OAuth token ages on its own, so an env you haven't touched in a while can quietly expire. `cenv auth status` runs `claude auth status` in the env and exits nonzero if nothing is stored:
+
+```sh
+cenv auth status my-env          # JSON, straight from claude
+cenv auth status my-env --text   # human-readable
+cenv auth status my-env --live   # also make one real request
+```
+
+`claude auth status` only reports what's stored. It never checks expiry or hits the network, so an expired login still says `"loggedIn": true`. `--live` makes one minimal real request (Haiku, no tools, `--safe-mode`, no session saved; about $0.002) and fails with a `cenv login` hint if it's rejected. Use it as a pre-flight before launching an env unattended.
+
 ## Running under Claude Code's sandbox
 
 Claude Code's sandbox blocks writes outside an allowlist. cenv stores envs at `~/.local/share/cenv/` (or `$CENV_BASE`), so fresh installs hit `operation not permitted` on first `cenv create`.
