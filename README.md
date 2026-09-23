@@ -53,6 +53,53 @@ cenv auth status my-env --live   # also make one real request
 
 `claude auth status` only reports what's stored. It never checks expiry or hits the network, so an expired login still says `"loggedIn": true`. `--live` makes one minimal real request (Haiku, no tools, `--safe-mode`, no session saved; about $0.002) and fails with a `cenv login` hint if it's rejected. Use it as a pre-flight before launching an env unattended.
 
+### Keeping envs warm
+
+`cenv auth refresh` runs that same live request across envs, so Claude Code gets a chance to refresh each token before it goes stale:
+
+```sh
+cenv auth refresh my-env other-env
+cenv auth refresh --all
+```
+
+Claude Code refreshes during a request once the access token is expired or within 5 minutes of expiring, so a daily run is enough to refresh every env you're not actively using. Envs with nothing stored are skipped. If any env's login is already dead, it keeps going through the rest, then exits nonzero with the `cenv login` commands to fix them.
+
+To run it daily with launchd, save this as `~/Library/LaunchAgents/com.github.technicalpickles.cenv-refresh.plist` (adjust the paths; launchd doesn't use your shell's `PATH`, so both `cenv` and `claude` need to be findable from the one set here):
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.github.technicalpickles.cenv-refresh</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/you/go/bin/cenv</string>
+    <string>auth</string>
+    <string>refresh</string>
+    <string>--all</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/you/.local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>9</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/you/Library/Logs/cenv-refresh.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/you/Library/Logs/cenv-refresh.log</string>
+</dict>
+</plist>
+```
+
+Then load it with `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.github.technicalpickles.cenv-refresh.plist`. The log shows which envs need a `cenv login`.
+
 ## Running under Claude Code's sandbox
 
 Claude Code's sandbox blocks writes outside an allowlist. cenv stores envs at `~/.local/share/cenv/` (or `$CENV_BASE`), so fresh installs hit `operation not permitted` on first `cenv create`.
