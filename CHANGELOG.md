@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/technicalpickles/cenv/compare/v0.2.0...v0.3.0) (2026-09-24)
+
+
+### Features
+
+* add cenv auth refresh to keep env logins warm ([#17](https://github.com/technicalpickles/cenv/issues/17)) ([a6c6655](https://github.com/technicalpickles/cenv/commit/a6c6655617143e02b641f9cb9e6f9deb965c389a)), closes [#14](https://github.com/technicalpickles/cenv/issues/14)
+* add cenv auth status with --live check ([#15](https://github.com/technicalpickles/cenv/issues/15)) ([82b2eec](https://github.com/technicalpickles/cenv/commit/82b2eec8bdba23160bc27ad8e070b94465690513)), closes [#14](https://github.com/technicalpickles/cenv/issues/14)
+
 ## [0.2.0](https://github.com/technicalpickles/cenv/compare/v0.1.0...v0.2.0) (2026-07-02)
 
 
