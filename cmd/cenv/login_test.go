@@ -18,14 +18,33 @@ func TestLoginCmd_NonexistentEnv(t *testing.T) {
 	}
 }
 
-func TestLoginExec_DefaultsToSSO(t *testing.T) {
+func TestLoginExec_DefaultsToPlainLogin(t *testing.T) {
+	t.Setenv("CENV_LOGIN_FLAGS", "")
 	argv, environ := loginExec("/envs/foo", nil, []string{"A=1"})
 
-	if want := []string{"claude", "auth", "login", "--sso"}; !slices.Equal(argv, want) {
+	if want := []string{"claude", "auth", "login"}; !slices.Equal(argv, want) {
 		t.Errorf("argv = %v, want %v", argv, want)
 	}
 	if want := []string{"A=1", "CLAUDE_CONFIG_DIR=/envs/foo"}; !slices.Equal(environ, want) {
 		t.Errorf("environ = %v, want %v", environ, want)
+	}
+}
+
+func TestLoginExec_DefaultFlagsFromEnv(t *testing.T) {
+	t.Setenv("CENV_LOGIN_FLAGS", "--sso --email me@example.com")
+	argv, _ := loginExec("/envs/foo", nil, nil)
+
+	if want := []string{"claude", "auth", "login", "--sso", "--email", "me@example.com"}; !slices.Equal(argv, want) {
+		t.Errorf("argv = %v, want %v", argv, want)
+	}
+}
+
+func TestLoginExec_ExplicitFlagsReplaceEnvDefault(t *testing.T) {
+	t.Setenv("CENV_LOGIN_FLAGS", "--sso")
+	argv, _ := loginExec("/envs/foo", []string{"--console"}, nil)
+
+	if want := []string{"claude", "auth", "login", "--console"}; !slices.Equal(argv, want) {
+		t.Errorf("argv = %v, want %v", argv, want)
 	}
 }
 

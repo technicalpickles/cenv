@@ -29,7 +29,7 @@ Cloning from another cenv env works the same way:
 cenv create my-clone --from my-env   # my-clone is also authenticated
 ```
 
-If you want to authenticate fresh (different account, or source has no OAuth), `cenv login <env>` runs `claude auth login --sso` in that env: it prints a sign-in URL, then waits for the code on stdin. No REPL or terminal needed. Pass other `claude auth login` flags after `--` (e.g. `cenv login <env> -- --console`).
+If you want to authenticate fresh (different account, or source has no OAuth), `cenv login <env>` runs `claude auth login` in that env: it prints a sign-in URL, then waits for the code on stdin. No REPL or terminal needed. Pass `claude auth login` flags after `--` (e.g. `cenv login <env> -- --sso` or `-- --console`), or set `CENV_LOGIN_FLAGS=--sso` in your shell to make that the default.
 
 For scripts and agents, `cenv claude` fails fast with a message pointing at `cenv login` if the target env has never been authenticated. (`cenv run` still works as a deprecated alias for `cenv claude`.)
 
