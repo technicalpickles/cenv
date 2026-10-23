@@ -35,17 +35,19 @@ var runCmd = &cobra.Command{
 func runClaudeE(cmd *cobra.Command, args []string) error {
 	name := args[0]
 
-	envDir, err := preflightEnv(name)
-	if err != nil {
-		return err
-	}
-
 	var claudeArgs []string
 	if len(args) > 1 {
 		if args[1] != "--" {
 			return fmt.Errorf("unexpected argument %q (use -- before claude arguments)", args[1])
 		}
 		claudeArgs = args[2:]
+	}
+
+	// '-- /login' is the recovery path for an env with no auth, so it skips
+	// the auth check (the env must still exist and have loadable settings).
+	envDir, err := preflightEnvAuth(name, !isLoginRecovery(claudeArgs))
+	if err != nil {
+		return err
 	}
 
 	logf("%s\n", style.Info("Using %q (%s)", name, envDir))

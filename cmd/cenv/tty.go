@@ -1,16 +1,17 @@
 package main
 
-import "os"
+import (
+	"os"
 
-// isTerminal reports whether f refers to a terminal (character device).
+	"golang.org/x/term"
+)
+
+// isTerminal reports whether f is attached to a real terminal. A plain
+// character-device check is not enough: /dev/null is a character device too.
 // Safe to call with a nil receiver; returns false in that case.
 func isTerminal(f *os.File) bool {
 	if f == nil {
 		return false
 	}
-	fi, err := f.Stat()
-	if err != nil {
-		return false
-	}
-	return (fi.Mode() & os.ModeCharDevice) != 0
+	return term.IsTerminal(int(f.Fd()))
 }

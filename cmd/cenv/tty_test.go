@@ -23,3 +23,15 @@ func TestIsTerminal_Nil(t *testing.T) {
 		t.Error("isTerminal returned true for nil, want false")
 	}
 }
+
+func TestIsTerminal_DevNull(t *testing.T) {
+	f, err := os.Open(os.DevNull)
+	if err != nil {
+		t.Skipf("cannot open %s: %v", os.DevNull, err)
+	}
+	defer f.Close()
+
+	if isTerminal(f) {
+		t.Error("isTerminal returned true for /dev/null, want false")
+	}
+}
