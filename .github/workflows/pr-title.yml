@@ -1,0 +1,21 @@
+name: PR title
+
+# Squash merges use the PR title as the commit message, and release-please
+# builds the changelog and version bump from conventional commit prefixes. A
+# title like "Make cenv login do X" is silently skipped, so the change never
+# ships in a release. Fail the PR instead.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

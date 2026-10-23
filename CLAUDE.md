@@ -39,6 +39,8 @@ CI (`.github/workflows/ci.yml`) runs `mise run check` on `macos-latest` for ever
 
 `release-please` (`.github/workflows/release-please.yml`) watches pushes to `main`, maintains a release PR that bumps the version and generates `CHANGELOG.md` from conventional commits, and cuts the git tag + GitHub Release when that PR merges. The published-release event then fires `.github/workflows/release.yml`, which cross-compiles a darwin arm64+amd64 binary, `lipo`s them into a universal binary, and attaches it to the release.
 
+**PR titles must be conventional commits** (`feat:`, `fix:`, `docs:`, `chore:`, ...). Squash merges use the PR title as the commit message, and release-please silently skips anything without a recognized prefix, so the change lands on `main` but never reaches a release. `.github/workflows/pr-title.yml` fails the PR check on a bad title. If a merged change was missed, add a `BEGIN_COMMIT_OVERRIDE` / `END_COMMIT_OVERRIDE` block (one conventional commit per line) to the body of a later PR and release-please will count those lines.
+
 **Gotcha:** this cross-workflow trigger only fires if the release was created with a PAT/GitHub App token in the `RELEASE_PLEASE_TOKEN` secret — the default `GITHUB_TOKEN` is blocked by GitHub from triggering other workflows, so without that secret release PRs still open but merging them silently skips the binary build.
 
 ## Architecture
