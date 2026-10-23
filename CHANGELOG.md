@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/technicalpickles/cenv/compare/v0.3.0...v0.4.0) (2026-10-23)
+
+
+### Features
+
+* cenv login runs claude auth login, with CENV_LOGIN_FLAGS setting the default flags ([#20](https://github.com/technicalpickles/cenv/issues/20)) ([3fb5a70](https://github.com/technicalpickles/cenv/commit/3fb5a70994987e313cd07d374a29c9669d01e268))
+
+
+### Bug Fixes
+
+* allow /login past auth pre-flight and use a real TTY check ([#19](https://github.com/technicalpickles/cenv/issues/19)) ([194806e](https://github.com/technicalpickles/cenv/commit/194806eb493e5dd39daaa44bae8116632fffa006))
+
 ## [0.3.0](https://github.com/technicalpickles/cenv/compare/v0.2.0...v0.3.0) (2026-09-24)
 
 
