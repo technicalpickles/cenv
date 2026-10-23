@@ -12,36 +12,49 @@ import (
 )
 
 var loginCmd = &cobra.Command{
-	Use:     "login <name>",
-	Short:   "Open Claude in an environment so you can run /login",
-	Example: `  cenv login myenv`,
-	Long: `Opens the Claude Code REPL with CLAUDE_CONFIG_DIR pointed at the named
-environment. Type /login inside the REPL to authenticate this env.
+	Use:   "login <name> [-- claude-auth-login-flags...]",
+	Short: "Log in to Claude in an environment (claude auth login --sso)",
+	Example: `  cenv login myenv
+  cenv login myenv -- --console
+  cenv login myenv -- --sso --email me@example.com`,
+	Long: `Runs 'claude auth login' with CLAUDE_CONFIG_DIR pointed at the named
+environment. Claude prints a sign-in URL and waits for the code on stdin, so
+no REPL or PTY is needed.
 
-cenv login requires an interactive terminal. Agents and scripts should
-create envs via 'cenv create' and prompt the user to run 'cenv login'.`,
-	Args: cobra.ExactArgs(1),
+With no flags after --, cenv passes --sso. Anything after -- replaces that
+default and goes straight to 'claude auth login'.
+
+Stdin, stdout and stderr are passed through. To script it, run cenv login with
+a pipe on stdin, read the URL from its output, and write the code back.`,
+	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		if !env.Exists(name) {
 			return fmt.Errorf("environment %q not found", name)
 		}
-		if !isTerminal(os.Stdin) {
-			return fmt.Errorf("cenv login requires an interactive terminal")
-		}
-
-		envDir := env.Path(name)
 
 		claudePath, err := exec.LookPath("claude")
 		if err != nil {
 			return fmt.Errorf("claude not found in PATH")
 		}
 
-		logf("%s\n", style.Info("Opening Claude in %q; run /login inside the REPL.", name))
+		argv, environ := loginExec(env.Path(name), args[1:], os.Environ())
 
-		environ := append(os.Environ(), fmt.Sprintf("CLAUDE_CONFIG_DIR=%s", envDir))
-		return syscall.Exec(claudePath, []string{"claude"}, environ)
+		logf("%s\n", style.Info("Running claude auth login in %q.", name))
+
+		return syscall.Exec(claudePath, argv, environ)
 	},
+}
+
+// loginExec builds the argv and environment for 'claude auth login'. With no
+// extra flags it defaults to --sso.
+func loginExec(envDir string, extra, environ []string) (argv, newEnviron []string) {
+	if len(extra) == 0 {
+		extra = []string{"--sso"}
+	}
+	argv = append([]string{"claude", "auth", "login"}, extra...)
+	newEnviron = append(append([]string{}, environ...), fmt.Sprintf("CLAUDE_CONFIG_DIR=%s", envDir))
+	return argv, newEnviron
 }
 
 func init() {

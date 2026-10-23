@@ -1,7 +1,7 @@
 package main
 
 import (
-	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -18,29 +18,30 @@ func TestLoginCmd_NonexistentEnv(t *testing.T) {
 	}
 }
 
-func TestLoginCmd_RequiresTTY(t *testing.T) {
-	base := t.TempDir()
-	t.Setenv("CENV_BASE", base)
-	if err := os.MkdirAll(base+"/test-env", 0755); err != nil {
-		t.Fatalf("creating env dir: %v", err)
-	}
+func TestLoginExec_DefaultsToSSO(t *testing.T) {
+	argv, environ := loginExec("/envs/foo", nil, []string{"A=1"})
 
-	// Redirect os.Stdin to a pipe so isTerminal returns false regardless of
-	// whether the test runner has a real TTY attached.
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("creating pipe: %v", err)
+	if want := []string{"claude", "auth", "login", "--sso"}; !slices.Equal(argv, want) {
+		t.Errorf("argv = %v, want %v", argv, want)
 	}
-	t.Cleanup(func() { r.Close(); w.Close() })
-	orig := os.Stdin
-	os.Stdin = r
-	t.Cleanup(func() { os.Stdin = orig })
+	if want := []string{"A=1", "CLAUDE_CONFIG_DIR=/envs/foo"}; !slices.Equal(environ, want) {
+		t.Errorf("environ = %v, want %v", environ, want)
+	}
+}
 
-	runErr := loginCmd.RunE(loginCmd, []string{"test-env"})
-	if runErr == nil {
-		t.Fatal("expected TTY error, got nil")
+func TestLoginExec_PassesFlagsThrough(t *testing.T) {
+	argv, _ := loginExec("/envs/foo", []string{"--console"}, nil)
+
+	if want := []string{"claude", "auth", "login", "--console"}; !slices.Equal(argv, want) {
+		t.Errorf("argv = %v, want %v", argv, want)
 	}
-	if !strings.Contains(runErr.Error(), "terminal") {
-		t.Errorf("error = %q, want it to mention 'terminal'", runErr.Error())
+}
+
+func TestLoginExec_DoesNotMutateInputEnviron(t *testing.T) {
+	in := make([]string, 1, 10)
+	in[0] = "A=1"
+	loginExec("/envs/foo", nil, in)
+	if len(in) != 1 || in[:2][1] != "" {
+		t.Errorf("input environ was modified: %v", in[:2])
 	}
 }
