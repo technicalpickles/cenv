@@ -111,3 +111,57 @@ func TestDetect_NullOAuthAccount(t *testing.T) {
 		t.Error("Detect() = nil, want error for null oauthAccount")
 	}
 }
+
+// A token or key exported in the dev shell would make the no-auth tests above fail.
+func TestMain(m *testing.M) {
+	os.Unsetenv("ANTHROPIC_AUTH_TOKEN")
+	os.Unsetenv("ANTHROPIC_API_KEY")
+	os.Exit(m.Run())
+}
+
+func TestDetect_ProcessEnvToken(t *testing.T) {
+	for _, name := range []string{"ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY"} {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			writeJSON(t, dir, "settings.json", `{}`)
+			writeJSON(t, dir, ".claude.json", `{}`)
+			t.Setenv(name, "secret")
+
+			if err := auth.Detect(dir); err != nil {
+				t.Errorf("Detect() = %v, want nil when %s is set", err, name)
+			}
+		})
+	}
+}
+
+func TestDetect_EmptyProcessEnvToken(t *testing.T) {
+	dir := t.TempDir()
+	writeJSON(t, dir, "settings.json", `{}`)
+	t.Setenv("ANTHROPIC_AUTH_TOKEN", "")
+
+	if err := auth.Detect(dir); err == nil {
+		t.Error("Detect() = nil, want error when token env var is empty")
+	}
+}
+
+func TestDetect_SettingsEnvToken(t *testing.T) {
+	for _, name := range []string{"ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY"} {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			writeJSON(t, dir, "settings.json", `{"env": {"`+name+`": "secret"}}`)
+
+			if err := auth.Detect(dir); err != nil {
+				t.Errorf("Detect() = %v, want nil when settings.json env sets %s", err, name)
+			}
+		})
+	}
+}
+
+func TestDetect_EmptySettingsEnvToken(t *testing.T) {
+	dir := t.TempDir()
+	writeJSON(t, dir, "settings.json", `{"env": {"ANTHROPIC_AUTH_TOKEN": ""}}`)
+
+	if err := auth.Detect(dir); err == nil {
+		t.Error("Detect() = nil, want error when settings.json env token is empty")
+	}
+}
