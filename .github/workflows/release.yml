@@ -14,12 +14,21 @@ name: Release
 on:
   release:
     types: [published]
+  # Backfill: attach linux assets to a release that predates the linux job
+  # (`gh workflow run release.yml -f tag=v0.4.0`). Builds from that tag's
+  # source and skips the macOS job, whose asset already exists.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to attach linux binaries to
+        required: true
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: github.event_name == 'release'
     runs-on: macos-latest
     env:
       TAG: ${{ github.event.release.tag_name }}
@@ -54,11 +63,11 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     env:
-      TAG: ${{ github.event.release.tag_name }}
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
 
       - uses: jdx/mise-action@v2
 
