@@ -24,7 +24,7 @@ Run a single test:
 
 ```sh
 go test ./internal/settings/... -run TestDeepMerge
-go test ./cmd/cenv/... -run TestRun_MissingEnv -v
+go test ./cmd/cenv/... -run TestAuthRefresh_MissingEnv -v
 ```
 
 Keychain tests (`cmd/cenv/create_keychain_test.go`) hit the real macOS keychain and are gated behind a build tag, excluded from `go test ./...` and from CI:
