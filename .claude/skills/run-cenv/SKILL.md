@@ -1,6 +1,6 @@
 ---
 name: run-cenv
-description: Build, run, and smoke-test the cenv CLI (manages isolated Claude Code config directories, like virtualenv for Claude Code). Use when asked to run cenv, build it, test it, or verify its subcommands (create/list/path/remove/settings/trust/claude/exec/login) work.
+description: Build, run, and smoke-test the cenv CLI (manages isolated Claude Code config directories, like virtualenv for Claude Code). Use when asked to run cenv, build it, test it, or verify its subcommands (create/list/path/remove/settings/trust/claude/exec/login/auth) work.
 ---
 
 cenv is a Go CLI, not a GUI/server — there's no window or port to drive.
@@ -33,7 +33,7 @@ Confirm it built:
 
 ```bash
 ./cenv --help
-# → lists: create, list, path, remove, claude, exec, settings, trust, login, completion
+# → lists: auth, claude, completion, create, exec, list, login, path, remove, settings, trust
 # (run still works too — it's a deprecated alias for claude, hidden from this list)
 ```
 
@@ -64,7 +64,7 @@ real macOS keychain. Cleans up its temp dir on exit via `trap`.
 
 Most of what's interesting in this repo is the subcommand logic under
 `cmd/cenv/*.go`, backed by pure-ish packages in `internal/` (`env`,
-`settings`, `claudeconfig`, `auth`, `keychain`, `bootstrap`). None of it
+`settings`, `claudeconfig`, `auth`, `claudeauth`, `keychain`, `bootstrap`, `style`). None of it
 needs the built binary — `go test ./...` exercises it directly and is
 the fastest feedback loop for internal changes:
 
@@ -115,7 +115,7 @@ different project's UI, not cenv's.
 mise exec -- go test ./...
 ```
 
-All 7 packages pass (`cmd/cenv`, `internal/{auth,bootstrap,claudeconfig,env,keychain,settings}`).
+All packages pass (`cmd/cenv` and every `internal/` package).
 
 ## Gotchas
 
