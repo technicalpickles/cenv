@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/technicalpickles/cenv/compare/v0.4.0...v0.4.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* accept ANTHROPIC_AUTH_TOKEN and ANTHROPIC_API_KEY as auth ([#23](https://github.com/technicalpickles/cenv/issues/23)) ([1b460f0](https://github.com/technicalpickles/cenv/commit/1b460f061f54d03354d1ed5468a36d8ecdb15fe4))
+
 ## [0.4.0](https://github.com/technicalpickles/cenv/compare/v0.3.0...v0.4.0) (2026-10-23)
 
 
